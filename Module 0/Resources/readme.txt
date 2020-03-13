@@ -1,0 +1,1 @@
+Sample message | Congratulations! You can successfully access the Data Lake storage container

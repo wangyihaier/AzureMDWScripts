@@ -1,0 +1,65 @@
+--Weather Data
+--factWeatherMeasurements
+CREATE TABLE [prod].[factWeatherMeasurements]
+WITH
+(
+	CLUSTERED COLUMNSTORE INDEX,
+	DISTRIBUTION = HASH(fipscountycode)
+)
+AS SELECT *, CONVERT(UNIQUEIDENTIFIER,0x0) AS ELTID FROM [STG].[factWeatherMeasurements]
+
+--dimWeatherObservationTypes
+CREATE TABLE [prod].[dimWeatherObservationTypes]
+WITH
+(
+	CLUSTERED COLUMNSTORE INDEX,
+	DISTRIBUTION = REPLICATE
+)
+AS SELECT *, CONVERT(UNIQUEIDENTIFIER,0x0) AS ELTID FROM [STG].[dimWeatherObservationTypes];
+
+--dimUSFIPSCodes
+CREATE TABLE [prod].[dimUSFIPSCodes]
+WITH
+(
+	CLUSTERED COLUMNSTORE INDEX,
+	DISTRIBUTION = REPLICATE
+)
+AS SELECT *, CONVERT(UNIQUEIDENTIFIER,0x0) AS ELTID FROM [STG].[dimUSFIPSCodes];
+
+--dimWeatherObservationSites
+CREATE TABLE [prod].[dimWeatherObservationSites]
+WITH
+(
+	CLUSTERED COLUMNSTORE INDEX,
+	DISTRIBUTION = REPLICATE
+)
+AS SELECT *, CONVERT(UNIQUEIDENTIFIER,0x0) AS ELTID FROM [STG].[dimWeatherObservationSites];
+
+/*----fireevents----*/
+--factFireEvents
+CREATE TABLE [prod].[factFireEvents]
+WITH 
+(
+	CLUSTERED COLUMNSTORE INDEX,
+	DISTRIBUTION = HASH(StateFipsCode)
+)
+AS SELECT *, CONVERT(UNIQUEIDENTIFIER,0x0) AS ELTID FROM [STG].[factFireEvents] 
+
+----dimOrganizationCode
+CREATE TABLE [prod].[dimOrganizationCode]
+WITH
+(
+	CLUSTERED COLUMNSTORE INDEX,
+	DISTRIBUTION = REPLICATE
+)
+AS SELECT *, CONVERT(UNIQUEIDENTIFIER,0x0) AS ELTID FROM [STG].[dimOrganizationCode];
+	
+
+--dimAreaProtectionCategory
+CREATE TABLE [prod].[dimAreaProtectionCategory]
+WITH
+(
+	CLUSTERED COLUMNSTORE INDEX,
+	DISTRIBUTION = REPLICATE
+)
+AS SELECT *, CONVERT(UNIQUEIDENTIFIER,0x0) AS ELTID FROM [STG].[dimAreaProtectionCategory];

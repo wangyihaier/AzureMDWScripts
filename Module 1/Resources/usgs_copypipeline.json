@@ -1,0 +1,289 @@
+{
+    "$schema": "http://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "dataFactoryName": {
+            "type": "string",
+            "metadata": "Data Factory Name"
+        },
+        "integrationRuntimeName": {
+            "type": "string",
+            "metadata": "Integration Runtime Name",
+            "defaultValue": "dataMovementEngine"
+        },
+        "cloudDWConnectionString": {
+            "type": "secureString",
+            "metadata": "Secure connection string of Azure SQL Data Warehouse instance"
+        },
+        "dataLakeURL": {
+            "type": "string",
+            "metadata": "URL of Azure Data Lake Store (Gen2) instance"            
+        },
+        "dataLakeAccountKey": {
+            "type": "secureString",
+            "metadata": "Secure account key for Azure Data Lake Store (Gen2) instance"
+        },
+        "localUserId": {
+            "type": "string",
+            "metadata": "Username of domain account for Windows Authentication to SQL Server instance",
+            "defaultValue": "usgsadmin"
+        },
+        "localFileSystemPassword": {
+            "type": "secureString",
+            "metadata": "Secure string storing account password of on-premise Windows machine"
+        },
+        "localServerName": {
+            "type": "string",
+            "metadata": "Name of local SQL Server instance"
+        }     
+    },
+    "variables": {
+        "factoryId": "[concat('Microsoft.DataFactory/factories/', parameters('dataFactoryName'))]",
+        "defaultFileName": "",
+        "onsiteDbConnectionString": "[concat('integrated security=True;data source=', parameters('localServerName'), ';initial catalog=fireevents')]"
+    },
+    "resources": [
+    {
+        "name": "[concat(parameters('dataFactoryName'), '/USGSInitialCopy')]",
+        "type": "Microsoft.DataFactory/factories/pipelines",
+        "apiVersion": "2018-06-01",
+        "properties": {
+            "activities": [
+            {
+                "name": "CopyEachSQLTable",
+                "description": "Copies each SQL Server Table in input list from on-prem SQL Server instance to CSV files in Azure Data Lake Store (Gen2)",
+                "type": "ForEach",
+                "dependsOn": [],
+                "userProperties": [],
+                "typeProperties": {
+                    "items": { "value": "@pipeline().parameters.inputTableList", "type": "Expression" },
+                    "activities": [
+                    {
+                        "name": "CopyTable",
+                        "type": "Copy",
+                        "dependsOn": [],
+                        "policy": {
+                            "timeout": "7.00:00:00",
+                            "retry": 0,
+                            "retryIntervalInSeconds": 30,
+                            "secureOutput": false,
+                            "secureInput": false
+                        },
+                        "userProperties": [],
+                        "typeProperties": {
+                            "source": { "type": "SqlSource" },
+                            "sink": { "type": "AzureBlobFSSink" },
+                            "enableStaging": false,
+                            "dataIntegrationUnits": 0
+                        },
+                        "inputs": [{
+                            "referenceName": "onsiteSQLServerTable",
+                            "type": "DatasetReference",
+                            "parameters": { "tableName": "@item().source.tableName" }
+                        }],
+                        "outputs": [{
+                            "referenceName": "dataLakeCSVBlobInstance",
+                            "type": "DatasetReference",
+                            "parameters": { "folderPath": "fireevents" }
+                        }]
+                    }]
+                }
+            },
+            {
+                "name": "CopyLocalFiles",
+                "description": "Copies weather event data from CSV files on on-prem machine into Azure Data Lake Store (Gen2)",
+                "type": "Copy",
+                "dependsOn": [],
+                "policy": {
+                    "timeout": "7.00:00:00",
+                    "retry": 0,
+                    "retryIntervalInSeconds": 30,
+                    "secureOutput": false,
+                    "secureInput": false
+                },
+                "userProperties": [],
+                "typeProperties": {
+                    "source": { "type": "FileSystemSource", "recursive": true },
+                    "sink": { "type": "AzureBlobFSSink", "copyBehavior": "PreserveHierarchy" },
+                    "enableStaging": false,
+                    "dataIntegrationUnits": 0
+                },
+                "inputs": [
+                    {
+                        "referenceName": "WeatherEventFiles",
+                        "type": "DatasetReference",
+                        "parameters": {}
+                    }
+                ],
+                "outputs": [
+                    {
+                        "referenceName": "dataLakeCSVBlobInstance",
+                        "type": "DatasetReference",
+                        "parameters": { "folderPath": "weatherevents" }
+                    }
+                ]
+            }
+            ],
+            "parameters": {
+                "inputTableList": {
+                    "type": "Array",
+                    "defaultValue": [
+                        { 
+                            "source": { "tableName": "dbo.dimAreaProtectionCategory" }
+                        },
+                        { 
+                            "source": { "tableName": "dbo.dimFireResponseCode" }
+                        },
+                        { 
+                            "source": { "tableName": "dbo.dimFireSizeClass" }
+                        },
+                        { 
+                            "source": { "tableName": "dbo.dimGeneralCauseCategory" }
+                        },
+                        { 
+                            "source": { "tableName": "dbo.dimOrganizationCode" }
+                        },
+                        { 
+                            "source": { "tableName": "dbo.dimPreciseCause" }
+                        },
+                        { 
+                            "source": { "tableName": "dbo.dimStatisticalCause" }
+                        }, 
+                        { 
+                            "source": { "tableName": "dbo.factFireEvents" }
+                        }  
+                    ]
+                }
+            },
+            "annotations": []
+            },
+            "dependsOn": [
+                "[concat(variables('factoryId'), '/datasets/onsiteSQLServerTable')]",
+                "[concat(variables('factoryId'), '/datasets/dataLakeCSVBlobInstance')]"
+            ]
+        },
+        {
+            "name": "[concat(parameters('dataFactoryName'), '/onsiteSQLServerTable')]",
+            "type": "Microsoft.DataFactory/factories/datasets",
+            "apiVersion": "2018-06-01",
+            "properties": {
+                "linkedServiceName": { "referenceName": "usgsonpremserver", "type": "LinkedServiceReference" },
+                "parameters": { "tableName": { "type": "String" } },
+                "annotations": [],
+                "type": "SqlServerTable",
+                "typeProperties": {
+                    "tableName": { "value": "@dataset().tableName", "type": "Expression" }
+                }
+            },
+            "dependsOn": [ "[concat(variables('factoryId'), '/linkedServices/usgsonpremserver')]" ]
+        },
+        {
+            "name": "[concat(parameters('dataFactoryName'), '/dataLakeCSVBlobInstance')]",
+            "type": "Microsoft.DataFactory/factories/datasets",
+            "apiVersion": "2018-06-01",
+            "properties": {
+                "linkedServiceName": { "referenceName": "dataLakeStorageConnection", "type": "LinkedServiceReference" },
+                "parameters": { "folderPath": { "type": "String" } },
+                "annotations": [],
+                "type": "AzureBlobFSFile",
+                "typeProperties": {
+                    "format": {
+                        "type": "TextFormat",
+                        "columnDelimiter": "|",
+                        "rowDelimiter": "",
+                        "nullValue": "",
+                        "treatEmptyAsNull": false,
+                        "skipLineCount": 1,
+                        "firstRowAsHeader": false
+                    },
+                    "folderPath": { "value": "@dataset().folderPath", "type": "Expression"}
+                }
+            },
+            "dependsOn": ["[concat(variables('factoryId'), '/linkedServices/dataLakeStorageConnection')]"]
+        },
+        {
+            "name": "[concat(parameters('dataFactoryName'), '/WeatherEventFiles')]",
+            "type": "Microsoft.DataFactory/factories/datasets",
+            "apiVersion": "2017-09-01-preview",
+            "properties": {
+                "linkedServiceName": {
+                    "referenceName": "USGSLocalFileSystemConnection",
+                    "type": "LinkedServiceReference"
+                },
+                "annotations": [],
+                "type": "FileShare",
+                "typeProperties": {}
+            },
+            "dependsOn": [
+                "[concat(variables('factoryId'), '/linkedServices/USGSLocalFileSystemConnection')]"
+            ]
+        },        
+        {
+            "name": "[concat(parameters('dataFactoryName'), '/', parameters('integrationRuntimeName'))]",
+            "type": "Microsoft.DataFactory/factories/integrationRuntimes",
+            "apiVersion": "2018-06-01",
+            "properties": {
+                "type": "SelfHosted",
+                "typeProperties": {}
+            },
+            "dependsOn": []
+        },
+        {
+            "name": "[concat(parameters('dataFactoryName'), '/usgsonpremserver')]",
+            "type": "Microsoft.DataFactory/factories/linkedServices",
+            "apiVersion": "2018-06-01",
+            "properties": {
+                "annotations": [],
+                "type": "SqlServer",
+                "typeProperties": {
+                    "connectionString": "[variables('onsiteDbConnectionString')]",
+                    "userName": "[parameters('localUserId')]",
+                    "password": "[parameters('localFileSystemPassword')]"
+                },
+                "connectVia": {
+                    "referenceName": "[parameters('integrationRuntimeName')]",
+                    "type": "IntegrationRuntimeReference"
+                }
+            },
+            "dependsOn": [
+                "[concat(variables('factoryId'), '/integrationRuntimes/', parameters('integrationRuntimeName'))]"
+            ]
+        },
+        {
+            "name": "[concat(parameters('dataFactoryName'), '/dataLakeStorageConnection')]",
+            "type": "Microsoft.DataFactory/factories/linkedServices",
+            "apiVersion": "2018-06-01",
+            "properties": {
+                "annotations": [],
+                "type": "AzureBlobFS",
+                "typeProperties": {
+                    "url": "[parameters('dataLakeURL')]",
+                    "accountKey": {
+                        "type": "SecureString",
+                        "value": "[parameters('dataLakeAccountKey')]"
+                    }
+                }
+            },
+            "dependsOn": []
+        },
+        {
+            "name": "[concat(parameters('dataFactoryName'), '/USGSLocalFileSystemConnection')]",
+            "type": "Microsoft.DataFactory/factories/linkedServices",
+            "apiVersion": "2017-09-01-preview",
+            "properties": {
+                "annotations": [],
+                "type": "FileServer",
+                "typeProperties": {
+                    "host": "C:\\USGSdata\\weatherdata",
+                    "userId": "[parameters('localUserId')]",
+                    "password": { "type": "SecureString", "value": "[parameters('localFileSystemPassword')]" }
+                },
+                "connectVia": {
+                    "referenceName": "[parameters('integrationRuntimeName')]",
+                    "type": "IntegrationRuntimeReference"
+                }
+            },
+            "dependsOn": [ "[concat(variables('factoryId'), '/integrationRuntimes/', parameters('integrationRuntimeName'))]" ]
+        }
+    ]
+}

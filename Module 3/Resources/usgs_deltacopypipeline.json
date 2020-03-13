@@ -1,0 +1,403 @@
+{
+  "$schema": "http://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "cloudDWConnectionString": {
+      "type": "secureString",
+      "metadata": "Secure connection string of Azure SQL Data Warehouse instance"
+    },
+    "stagingAccountURL": {
+      "type": "string",
+      "metadata": "URL of Azure Blob Storage instance that will be used for staging Polybase loads"
+    },
+    "stagingAccountKey": {
+      "type": "secureString",
+      "metadata": "Secure account key for staging Azure Blob Storage Instance"
+    },
+    "dataFactoryName": {
+      "type": "string",
+      "metadata": "Data Factory Name"
+    },
+    "localServerName": {
+      "type": "string",
+      "metadata": "Name of local SQL Server instance"
+    },
+    "USGSStagingAccount_connectionString": {
+      "type": "secureString",
+      "metadata": "Secure connection string for Azure Blob Storage staging account"
+    },
+    "integrationRuntimeName": {
+      "type": "string",
+      "metadata": "Integration Runtime Name",
+      "defaultValue": "dataMovementEngine"
+    },
+    "localUserId": {
+      "type": "string",
+      "metadata": "Username of domain account for Windows Authentication to SQL Server instance",
+      "defaultValue": "usgsadmin"
+    },
+    "localFileSystemPassword": {
+      "type": "secureString",
+      "metadata": "Secure string storing account password of on-premise Windows machine"
+    }
+  },
+  "variables": {
+    "factoryId": "[concat('Microsoft.DataFactory/factories/', parameters('dataFactoryName'))]",
+    "onsiteDbConnectionString": "[concat('integrated security=True;data source=', parameters('localServerName'), ';initial catalog=fireevents')]"
+  },
+  "resources": [
+    {
+      "name": "[concat(parameters('dataFactoryName'), '/USGSDeltaCopy')]",
+      "type": "Microsoft.DataFactory/factories/pipelines",
+      "apiVersion": "2018-06-01",
+      "properties": {
+        "activities": [
+          {
+            "name": "GetLastTrackingVersion",
+            "description": "Lookup the last change tracking version read by the ADF pipeline",
+            "type": "Lookup",
+            "dependsOn": [],
+            "policy": {
+              "timeout": "7.00:00:00",
+              "retry": 0,
+              "retryIntervalInSeconds": 30,
+              "secureOutput": false,
+              "secureInput": false
+            },
+            "userProperties": [],
+            "typeProperties": {
+              "source": {
+                "type": "SqlSource"
+              },
+              "dataset": {
+                "referenceName": "onsiteSQLServerTable",
+                "type": "DatasetReference",
+                "parameters": {
+                  "tableName": "dbo.changeTrackingRecords"
+                }
+              },
+              "firstRowOnly": true
+            }
+          },
+          {
+            "name": "GetCurrentTrackingVersion",
+            "description": "Lookup the current change tracking version of the on-prem fireEvents database",
+            "type": "Lookup",
+            "dependsOn": [],
+            "policy": {
+              "timeout": "7.00:00:00",
+              "retry": 0,
+              "retryIntervalInSeconds": 30,
+              "secureOutput": false,
+              "secureInput": false
+            },
+            "userProperties": [],
+            "typeProperties": {
+              "source": {
+                "type": "SqlSource",
+                "sqlReaderQuery": "SELECT CHANGE_TRACKING_CURRENT_VERSION() as CurrentChangeTrackingVersion"
+              },
+              "dataset": {
+                "referenceName": "onsiteSQLServerTable",
+                "type": "DatasetReference",
+                "parameters": {
+                  "tableName": "dbo.changeTrackingRecords"
+                }
+              },
+              "firstRowOnly": true
+            }
+          },
+          {
+            "name": "DeltaCopyActivity",
+            "description": "Copies new or updated data from on-prem SQL Server table to SQL Data Warehouse",
+            "type": "Copy",
+            "dependsOn": [
+              {
+                "activity": "GetLastTrackingVersion",
+                "dependencyConditions": [
+                  "Succeeded"
+                ]
+              },
+              {
+                "activity": "GetCurrentTrackingVersion",
+                "dependencyConditions": [
+                  "Succeeded"
+                ]
+              }
+            ],
+            "policy": {
+              "timeout": "7.00:00:00",
+              "retry": 0,
+              "retryIntervalInSeconds": 30,
+              "secureOutput": false,
+              "secureInput": false
+            },
+            "userProperties": [],
+            "typeProperties": {
+              "source": {
+                "type": "SqlSource",
+                "sqlReaderQuery": "SELECT fireEvents.* FROM dbo.factFireEvents fireEvents RIGHT OUTER JOIN CHANGETABLE(CHANGES factFireEvents, @{activity('GetLastTrackingVersion').output.firstRow.SYS_CHANGE_VERSION}) AS dataUpdates ON fireEvents.ObjectId = dataUpdates.ObjectId WHERE dataUpdates.SYS_CHANGE_VERSION <= @{activity('GetCurrentTrackingVersion').output.firstRow.CurrentChangeTrackingVersion}"
+              },
+              "sink": {
+                "type": "SqlDWSink",
+                "allowPolyBase": true,
+                "writeBatchSize": 10000,
+                "preCopyScript": "TRUNCATE TABLE stg.FactFireEvents",
+                "polyBaseSettings": {
+                  "rejectValue": 0,
+                  "rejectType": "value",
+                  "useTypeDefault": true
+                }
+              },
+              "enableStaging": true,
+              "stagingSettings": {
+                "linkedServiceName": {
+                  "referenceName": "USGSStagingAccount",
+                  "type": "LinkedServiceReference"
+                },
+                "path": "stagingcontainer"
+              }
+            },
+            "inputs": [
+              {
+                "referenceName": "onsiteSQLServerTable",
+                "type": "DatasetReference",
+                "parameters": {
+                  "tableName": "dbo.changeTrackingRecords"
+                }
+              }
+            ],
+            "outputs": [
+              {
+                "referenceName": "dwTableInstance",
+                "type": "DatasetReference",
+                "parameters": {
+                  "tableName": "STG.factFireEvents"
+                }
+              }
+            ]
+          },
+          {
+            "name": "UpdateChangeTrackingTables",
+            "description": "Update on-prem change tracking tables with the change tracking version that was read in this pipeline",
+            "type": "SqlServerStoredProcedure",
+            "dependsOn": [
+              {
+                "activity": "UpdateDWProductionTables",
+                "dependencyConditions": [
+                  "Succeeded"
+                ]
+              }
+            ],
+            "policy": {
+              "timeout": "7.00:00:00",
+              "retry": 0,
+              "retryIntervalInSeconds": 30,
+              "secureOutput": false,
+              "secureInput": false
+            },
+            "userProperties": [],
+            "typeProperties": {
+              "storedProcedureName": "dbo.sp_UpdateChangeTrackingVersion",
+              "storedProcedureParameters": {
+                "CurrentTrackingVersion": {
+                  "value": {
+                    "value": "@activity('GetCurrentTrackingVersion').output.firstRow.CurrentChangeTrackingVersion",
+                    "type": "Expression"
+                  },
+                  "type": "Int64"
+                },
+                "TableName": {
+                  "value": {
+                    "value": "@activity('GetLastTrackingVersion').output.firstRow.TableName",
+                    "type": "Expression"
+                  },
+                  "type": "String"
+                }
+              }
+            },
+            "linkedServiceName": {
+              "referenceName": "usgsonpremserver",
+              "type": "LinkedServiceReference"
+            }
+          },
+          {
+            "name": "UpdateDWProductionTables",
+            "description": "Inserts new fire event facts into production table instance",
+            "type": "SqlServerStoredProcedure",
+            "dependsOn": [
+              {
+                "activity": "DeltaCopyActivity",
+                "dependencyConditions": [
+                  "Succeeded"
+                ]
+              }
+            ],
+            "policy": {
+              "timeout": "7.00:00:00",
+              "retry": 0,
+              "retryIntervalInSeconds": 30,
+              "secureOutput": false,
+              "secureInput": false
+            },
+            "userProperties": [],
+            "typeProperties": {
+              "storedProcedureName": "prod.sp_addFireStagingRecordsToProduction",
+              "storedProcedureParameters": {
+                "pipelineRunId": {
+                  "value": {
+                    "value": "@pipeline().RunId",
+                    "type": "Expression"
+                  },
+                  "type": "String"
+                }
+              }
+            },
+            "linkedServiceName": {
+              "referenceName": "sqlDwConnection",
+              "type": "LinkedServiceReference"
+            }
+          }
+        ],
+        "annotations": []
+      },
+      "dependsOn": [
+        "[concat(variables('factoryId'), '/datasets/onsiteSQLServerTable')]",
+        "[concat(variables('factoryId'), '/datasets/dwTableInstance')]",
+        "[concat(variables('factoryId'), '/linkedServices/usgsonpremserver')]",
+        "[concat(variables('factoryId'), '/linkedServices/USGSStagingAccount')]",
+        "[concat(variables('factoryId'), '/linkedServices/sqlDwConnection')]"
+      ]
+    },
+    {
+      "name": "[concat(parameters('dataFactoryName'), '/onsiteSQLServerTable')]",
+      "type": "Microsoft.DataFactory/factories/datasets",
+      "apiVersion": "2018-06-01",
+      "properties": {
+          "linkedServiceName": { "referenceName": "usgsonpremserver", "type": "LinkedServiceReference" },
+          "parameters": { "tableName": { "type": "String" } },
+          "annotations": [],
+          "type": "SqlServerTable",
+          "typeProperties": {
+              "tableName": { "value": "@dataset().tableName", "type": "Expression" }
+          }
+      },
+      "dependsOn": [ "[concat(variables('factoryId'), '/linkedServices/usgsonpremserver')]" ]
+    },
+    {
+      "name": "[concat(parameters('dataFactoryName'), '/dwTableInstance')]",
+      "type": "Microsoft.DataFactory/factories/datasets",
+      "apiVersion": "2018-06-01",
+      "properties": {
+        "linkedServiceName": {
+          "referenceName": "sqlDwConnection",
+          "type": "LinkedServiceReference"
+        },
+        "parameters": {
+          "tableName": {
+            "type": "String",
+            "defaultValue": "STG.factFireEvents"
+          }
+        },
+        "annotations": [],
+        "type": "AzureSqlDWTable",
+        "typeProperties": {
+          "tableName": {
+            "value": "@dataset().tableName",
+            "type": "Expression"
+          }
+        }
+      },
+      "dependsOn": [
+        "[concat(variables('factoryId'), '/linkedServices/sqlDwConnection')]"
+      ]
+    },
+    {
+      "name": "[concat(parameters('dataFactoryName'), '/sqlDwConnection')]",
+      "type": "Microsoft.DataFactory/factories/linkedServices",
+      "apiVersion": "2018-06-01",
+      "properties": {
+        "annotations": [],
+        "type": "AzureSqlDW",
+        "typeProperties": {
+          "connectionString": "[parameters('cloudDWConnectionString')]"
+        }
+      },
+      "dependsOn": []
+    },
+    {
+      "name": "[concat(parameters('dataFactoryName'), '/', parameters('integrationRuntimeName'))]",
+      "type": "Microsoft.DataFactory/factories/integrationRuntimes",
+      "apiVersion": "2018-06-01",
+      "properties": {
+          "type": "SelfHosted",
+          "typeProperties": {}
+      },
+      "dependsOn": []
+    },
+    {
+      "name": "[concat(parameters('dataFactoryName'), '/usgsonpremserver')]",
+      "type": "Microsoft.DataFactory/factories/linkedServices",
+      "apiVersion": "2018-06-01",
+      "properties": {
+          "annotations": [],
+          "type": "SqlServer",
+          "typeProperties": {
+              "connectionString": "[variables('onsiteDbConnectionString')]",
+              "userName": "[parameters('localUserId')]",
+              "password": "[parameters('localFileSystemPassword')]"
+          },
+          "connectVia": {
+              "referenceName": "[parameters('integrationRuntimeName')]",
+              "type": "IntegrationRuntimeReference"
+          }
+      },
+      "dependsOn": [
+          "[concat(variables('factoryId'), '/integrationRuntimes/', parameters('integrationRuntimeName'))]"
+      ]
+    },
+    {
+      "name": "[concat(parameters('dataFactoryName'), '/USGSStagingAccount')]",
+      "type": "Microsoft.DataFactory/factories/linkedServices",
+      "apiVersion": "2018-06-01",
+      "properties": {
+        "annotations": [],
+        "type": "AzureBlobStorage",
+        "typeProperties": {
+          "connectionString": "[parameters('USGSStagingAccount_connectionString')]"
+        }
+      },
+      "dependsOn": []
+    },
+    {
+      "name": "[concat(parameters('dataFactoryName'), '/dailyTrigger')]",
+      "type": "Microsoft.DataFactory/factories/triggers",
+      "apiVersion": "2018-06-01",
+      "properties": {
+          "description": "Fires every day",
+          "annotations": [],
+          "runtimeState": "Started",
+          "pipelines": [
+              {
+                  "pipelineReference": {
+                      "referenceName": "USGSDeltaCopy",
+                      "type": "PipelineReference"
+                  }                  
+              }
+          ],
+          "type": "ScheduleTrigger",
+          "typeProperties": {
+              "recurrence": {
+                  "frequency": "Day",
+                  "interval": 1,
+                  "startTime": "2019-01-12T09:00:00Z",
+                  "timeZone": "UTC"                  
+              }
+          }
+      },
+      "dependsOn": [
+          "[concat(variables('factoryId'), '/pipelines/USGSDeltaCopy')]"
+      ]
+    }
+  ]
+}
