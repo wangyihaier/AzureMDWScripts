@@ -69,9 +69,7 @@
                 "administratorLogin": "[variables('administratorLogin')]",
                 "administratorLoginPassword": "[variables('administratorLoginPassword')]"
             },
-            "tags": {
-                "participantId": "[parameters('userNumber')]"
-            },
+            "tags": { "participantId": "[parameters('userNumber')]"},
             "resources": [
                 {
                     "dependsOn": [
@@ -112,9 +110,7 @@
             "sku": {
                 "name": "[variables('serviceObjective')]"
             },
-            "tags": {
-                "participantId": "[parameters('userNumber')]"
-            },
+            "tags": { "participantId": "[parameters('userNumber')]"},
             "properties": {
                 "collation": "SQL_Latin1_General_CP1_CI_AS"
             }
@@ -124,9 +120,7 @@
             "type": "Microsoft.Network/virtualNetworks",
             "name": "[variables('vnetName')]",
             "location": "[variables('location')]",
-            "tags": {
-                "participantId": "[parameters('userNumber')]"
-            },
+            "tags": { "participantId": "[parameters('userNumber')]"},
             "properties": {
                 "addressSpace": {
                     "addressPrefixes": [
@@ -148,9 +142,7 @@
             "apiVersion": "2017-09-01-preview",
             "type": "Microsoft.DataFactory/factories",
             "location": "[variables('location')]",
-            "tags": {
-                "participantId": "[parameters('userNumber')]"
-            },
+            "tags": { "participantId": "[parameters('userNumber')]"},
             "identity": {
                 "type": "SystemAssigned"
             }
@@ -164,9 +156,7 @@
             "name": "[variables('dataLakeName')]",
             "apiVersion": "2018-07-01",
             "location": "[variables('location')]",
-            "tags": {
-                "participantId": "[parameters('userNumber')]"
-            },
+            "tags": { "participantId": "[parameters('userNumber')]"},
             "properties": {
                 "accessTier": "Hot",
                 "supportsHttpsTrafficOnly": "true",
@@ -183,9 +173,7 @@
             "name": "[variables('stagingAccountName')]",
             "apiVersion": "2018-02-01",
             "location": "[variables('location')]",
-            "tags": {
-                "participantId": "[parameters('userNumber')]"
-            },
+            "tags": { "participantId": "[parameters('userNumber')]"},
             "properties": {
                 "accessTier": "Hot"
             },
@@ -205,9 +193,7 @@
             "name": "[variables('virtualMachineName')]",
             "apiVersion": "2018-06-01",
             "location": "[variables('location')]",
-            "tags": {
-                "participantId": "[parameters('userNumber')]"
-            },
+            "tags": { "participantId": "[parameters('userNumber')]"},
             "properties": {
                 "osProfile": {
                     "computerName": "[variables('virtualMachineName')]",
@@ -247,9 +233,7 @@
         {
             "type": "Microsoft.Network/networkInterfaces",
             "name": "[variables('networkInterfaceName')]",
-            "tags": {
-                "participantId": "[parameters('userNumber')]"
-            },
+            "tags": { "participantId": "[parameters('userNumber')]"},
             "apiVersion": "2018-10-01",
             "location": "[variables('location')]",
             "properties": {
@@ -284,9 +268,7 @@
             "name": "[variables('publicIpAddressName')]",
             "apiVersion": "2018-08-01",
             "location": "[variables('location')]",
-            "tags": {
-                "participantId": "[parameters('userNumber')]"
-            },
+            "tags": { "participantId": "[parameters('userNumber')]"},
             "properties": {
                 "publicIpAllocationMethod": "Dynamic"
             }
@@ -296,9 +278,7 @@
             "name": "[variables('networkSecurityGroupName')]",
             "apiVersion": "2018-08-01",
             "location": "[variables('location')]",
-            "tags": {
-                "participantId": "[parameters('userNumber')]"
-            },
+            "tags": { "participantId": "[parameters('userNumber')]"},
             "properties": {
                 "securityRules": [
                     {
@@ -334,11 +314,11 @@
                 "autoUpgradeMinorVersion": true,
                 "settings": {
                     "fileUris": [
-                        "https://sqldwexternaldata.blob.core.windows.net/labmaterials/USGS_LabSetup.ps1"
+                       "https://sqldwexternaldata.blob.core.windows.net/labmaterials/USGS_LabSetup.ps1"
                     ]
                 },
                 "protectedSettings": {
-                    "commandToExecute": "powershell -ExecutionPolicy Unrestricted -File USGS_LabSetup.ps1"
+                    "commandToExecute": "powershell -ExecutionPolicy Unrestricted -File USGS_LabSetup.ps1"                    
                 }
             }
         }
