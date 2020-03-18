@@ -223,7 +223,7 @@
                 },
                 "storageProfile": {
                     "imageReference": {
-                        "id": "/subscriptions/7e416de3-c506-4776-8270-83fd73c6cc37/resourceGroups/dwlabresources/providers/Microsoft.Compute/galleries/DWLabVMGallery/images/LabVMProperties/versions/2.0.1"
+                        "id": "/subscriptions/b221e5a7-d112-44a3-9a93-4acc1457ad0a/resourceGroups/wyarm/providers/Microsoft.Compute/images/DWLab-image-20200317"
                     },
                     "osDisk": {
                         "createOption": "fromImage",
@@ -334,7 +334,7 @@
                 "autoUpgradeMinorVersion": true,
                 "settings": {
                     "fileUris": [
-                        "https://sqldwexternaldata.blob.core.windows.net/labmaterials/USGS_LabSetup.ps1"
+                        "https://raw.githubusercontent.com/wangyihaier/AzureMDWScripts/master/LabFiles/USGS_LabSetup.ps1"
                     ]
                 },
                 "protectedSettings": {
