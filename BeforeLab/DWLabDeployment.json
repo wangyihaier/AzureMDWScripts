@@ -81,7 +81,7 @@
                         "startIpAddress": "0.0.0.0",
                         "endIpAddress": "0.0.0.0"
                     },
-                    "type": "firewallrules"
+                    "type": "firewallRules"
                 },
                 {
                     "apiVersion": "2017-10-01-preview",
@@ -93,7 +93,7 @@
                         "startIpAddress": "0.0.0.0",
                         "endIpAddress": "255.255.255.255"
                     },
-                    "type": "firewallrules"
+                    "type": "firewallRules"
                 }
             ]
         },
@@ -159,8 +159,8 @@
             "tags": { "participantId": "[parameters('userNumber')]"},
             "properties": {
                 "accessTier": "Hot",
-                "supportsHttpsTrafficOnly": "true",
-                "isHnsEnabled": "false"
+                "supportsHttpsTrafficOnly": true,
+                "isHnsEnabled": false
             }
         },
         {
@@ -212,7 +212,7 @@
                         "id": "/subscriptions/b221e5a7-d112-44a3-9a93-4acc1457ad0a/resourceGroups/wyarm/providers/Microsoft.Compute/images/DWLab-image-20200317"
                     },
                     "osDisk": {
-                        "createOption": "fromImage",
+                        "createOption": "FromImage",
                         "managedDisk": {
                             "storageAccountType": "Premium_LRS"
                         }
@@ -285,7 +285,7 @@
                         "name": "RDP",
                         "properties": {
                             "priority": 300,
-                            "protocol": "TCP",
+                            "protocol": "Tcp",
                             "access": "Allow",
                             "direction": "Inbound",
                             "sourceApplicationSecurityGroups": [],
@@ -325,15 +325,15 @@
     ],
     "outputs": {
         "vmUsername": {
-            "type": "String",
+            "type": "string",
             "value": "[variables('administratorLogin')]"
         },
         "vmPassword": {
-            "type": "String",
+            "type": "string",
             "value": "[variables('virtualMachinePassword')]"
         },
         "userNumber": {
-            "type": "String",
+            "type": "string",
             "value": "[parameters('userNumber')]"
         }
     }
