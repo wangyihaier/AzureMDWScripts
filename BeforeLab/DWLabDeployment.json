@@ -1,6 +1,6 @@
 {
     "contentVersion": "1.0.0.0",
-    "$schema": "http://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+    "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
     "parameters": {
         "userNumber": {
             "type": "string",
@@ -56,9 +56,20 @@
         "vnetId": "[resourceId(resourceGroup().name,'Microsoft.Network/virtualNetworks', variables('vnetName'))]",
         "subnetRef": "[concat(variables('vnetId'), '/subnets/', variables('subnetName'))]",
         "publicIpAddressName": "[concat(variables('virtualMachineName'),'-ip')]",
-        "networkSecurityGroupName": "[concat(variables('virtualMachineName'),'-nsg')]"
+        "networkSecurityGroupName": "[concat(variables('virtualMachineName'),'-nsg')]",
+        "adbWorkspaceName": "[concat('usgsdatabricks', parameters('userNumber'))]",
+        "adbPricingTier": "premium"
     },
     "resources": [
+        {
+            "type": "Microsoft.Databricks/workspaces",
+            "name": "[variables('adbWorkspaceName')]",
+            "location": "[variables('location')]",
+            "apiVersion": "2018-04-01",
+            "sku": {
+                "name": "[variables('adbPricingTier')]"
+            }
+        },
         {
             "name": "[variables('usgsServer')]",
             "location": "[variables('location')]",
@@ -69,7 +80,9 @@
                 "administratorLogin": "[variables('administratorLogin')]",
                 "administratorLoginPassword": "[variables('administratorLoginPassword')]"
             },
-            "tags": { "participantId": "[parameters('userNumber')]"},
+            "tags": {
+                "participantId": "[parameters('userNumber')]"
+            },
             "resources": [
                 {
                     "dependsOn": [
@@ -110,7 +123,9 @@
             "sku": {
                 "name": "[variables('serviceObjective')]"
             },
-            "tags": { "participantId": "[parameters('userNumber')]"},
+            "tags": {
+                "participantId": "[parameters('userNumber')]"
+            },
             "properties": {
                 "collation": "SQL_Latin1_General_CP1_CI_AS"
             }
@@ -120,7 +135,9 @@
             "type": "Microsoft.Network/virtualNetworks",
             "name": "[variables('vnetName')]",
             "location": "[variables('location')]",
-            "tags": { "participantId": "[parameters('userNumber')]"},
+            "tags": {
+                "participantId": "[parameters('userNumber')]"
+            },
             "properties": {
                 "addressSpace": {
                     "addressPrefixes": [
@@ -142,7 +159,9 @@
             "apiVersion": "2017-09-01-preview",
             "type": "Microsoft.DataFactory/factories",
             "location": "[variables('location')]",
-            "tags": { "participantId": "[parameters('userNumber')]"},
+            "tags": {
+                "participantId": "[parameters('userNumber')]"
+            },
             "identity": {
                 "type": "SystemAssigned"
             }
@@ -156,7 +175,9 @@
             "name": "[variables('dataLakeName')]",
             "apiVersion": "2018-07-01",
             "location": "[variables('location')]",
-            "tags": { "participantId": "[parameters('userNumber')]"},
+            "tags": {
+                "participantId": "[parameters('userNumber')]"
+            },
             "properties": {
                 "accessTier": "Hot",
                 "supportsHttpsTrafficOnly": true,
@@ -173,7 +194,9 @@
             "name": "[variables('stagingAccountName')]",
             "apiVersion": "2018-02-01",
             "location": "[variables('location')]",
-            "tags": { "participantId": "[parameters('userNumber')]"},
+            "tags": {
+                "participantId": "[parameters('userNumber')]"
+            },
             "properties": {
                 "accessTier": "Hot"
             },
@@ -193,7 +216,9 @@
             "name": "[variables('virtualMachineName')]",
             "apiVersion": "2018-06-01",
             "location": "[variables('location')]",
-            "tags": { "participantId": "[parameters('userNumber')]"},
+            "tags": {
+                "participantId": "[parameters('userNumber')]"
+            },
             "properties": {
                 "osProfile": {
                     "computerName": "[variables('virtualMachineName')]",
@@ -233,7 +258,9 @@
         {
             "type": "Microsoft.Network/networkInterfaces",
             "name": "[variables('networkInterfaceName')]",
-            "tags": { "participantId": "[parameters('userNumber')]"},
+            "tags": {
+                "participantId": "[parameters('userNumber')]"
+            },
             "apiVersion": "2018-10-01",
             "location": "[variables('location')]",
             "properties": {
@@ -268,7 +295,9 @@
             "name": "[variables('publicIpAddressName')]",
             "apiVersion": "2018-08-01",
             "location": "[variables('location')]",
-            "tags": { "participantId": "[parameters('userNumber')]"},
+            "tags": {
+                "participantId": "[parameters('userNumber')]"
+            },
             "properties": {
                 "publicIpAllocationMethod": "Dynamic"
             }
@@ -278,7 +307,9 @@
             "name": "[variables('networkSecurityGroupName')]",
             "apiVersion": "2018-08-01",
             "location": "[variables('location')]",
-            "tags": { "participantId": "[parameters('userNumber')]"},
+            "tags": {
+                "participantId": "[parameters('userNumber')]"
+            },
             "properties": {
                 "securityRules": [
                     {
@@ -314,11 +345,11 @@
                 "autoUpgradeMinorVersion": true,
                 "settings": {
                     "fileUris": [
-                       "https://raw.githubusercontent.com/wangyihaier/AzureMDWScripts/master/BeforeLab/USGS_LabSetup.ps1"
+                        "https://raw.githubusercontent.com/wangyihaier/AzureMDWScripts/master/BeforeLab/USGS_LabSetup.ps1"
                     ]
                 },
                 "protectedSettings": {
-                    "commandToExecute": "powershell -ExecutionPolicy Unrestricted -File USGS_LabSetup.ps1"                    
+                    "commandToExecute": "powershell -ExecutionPolicy Unrestricted -File USGS_LabSetup.ps1"
                 }
             }
         }
@@ -335,6 +366,10 @@
         "userNumber": {
             "type": "string",
             "value": "[parameters('userNumber')]"
+        },
+        "workspace": {
+            "type": "object",
+            "value": "[reference(resourceId('Microsoft.Databricks/workspaces', variables('adbWorkspaceName')))]"
         }
     }
 }
