@@ -58,7 +58,8 @@
         "publicIpAddressName": "[concat(variables('virtualMachineName'),'-ip')]",
         "networkSecurityGroupName": "[concat(variables('virtualMachineName'),'-nsg')]",
         "adbWorkspaceName": "[concat('usgsdatabricks', parameters('userNumber'))]",
-        "adbPricingTier": "premium"
+        "adbPricingTier": "premium",
+        "managedResourceGroupName": "[concat('databricks-rg-', variables('adbWorkspaceName'), '-', uniqueString(variables('adbWorkspaceName'), resourceGroup().id))]"
     },
     "resources": [
         {
@@ -68,7 +69,10 @@
             "apiVersion": "2018-04-01",
             "sku": {
                 "name": "[variables('adbPricingTier')]"
-            }
+            },
+            "properties": {
+                "managedResourceGroupId": "[concat(subscription().id, '/resourceGroups/', variables('managedResourceGroupName'))]"
+              }
         },
         {
             "name": "[variables('usgsServer')]",
