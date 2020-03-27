@@ -27,7 +27,7 @@ After login, you will disable strict checking of PowerShell scripts to allow you
 
 2. Run the following command to disable strict checking for PowerShell scripts
     ```powershell
-    Set-ExecutionPolicy-ExecutionPolicyUnrestricted-Force
+    Set-ExecutionPolicy Unrestricted -Force
     ```
 
 ## Restore on-prem database to local SQL Server
