@@ -5,7 +5,7 @@
 
 # ----------- Pass-in the variables below to set session-wide variables that will be used later ---------------------------------------------------------
 param (
-    [Parameter(Mandatory=$true)] [string]$subscriptionName,
+    [Parameter(Mandatory=$true)] [string]$subscriptionId,
 	[Parameter(Mandatory=$true)] [string]$resourceGroupName,
     [Parameter(Mandatory=$true)] [string]$participantNumber    
 )
@@ -67,7 +67,7 @@ Invoke-Sqlcmd -Query "EXEC sp_addrolemember 'staticrc60', 'usgsloader'" -ServerI
 
 # ------------ Copy welcome message to Data Lake Store -------------------------------------------------------------------------------
 Write-Host "Uploading test message to Data Lake Store Gen2..."
-Connect-AzAccount -Subscription $subscriptionName
+Connect-AzAccount -Subscription $subscriptionId
 $storageContext = (Get-AzStorageAccount -ResourceGroupName $resourceGroupName -AccountName $dataLakeName).Context
 
 $containerName = "readme"
