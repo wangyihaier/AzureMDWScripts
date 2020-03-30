@@ -1,8 +1,8 @@
-﻿$subscriptionName = 'b221e5a7-d112-44a3-9a93-4acc1457ad0a' 
+﻿$subscriptionId = 'b221e5a7-d112-44a3-9a93-4acc1457ad0a' 
 $participantNumber = 123 
 $resourceGroupName = 'wymoderndw'
 
-Connect-AzAccount -Subscription $SubscriptionName
+Connect-AzAccount -Subscription $subscriptionId
 
 $serverName = 'usgsserver' + $participantNumber
 $fullyQualifiedServerName = $serverName + '.database.windows.net'

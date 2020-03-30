@@ -1,8 +1,8 @@
-﻿$subscriptionName = 'b221e5a7-d112-44a3-9a93-4acc1457ad0a' 
+﻿$subscriptionId = 'b221e5a7-d112-44a3-9a93-4acc1457ad0a' 
 $participantNumber = 123 
 $resourceGroupName = 'wydw'
 
-Connect-AzAccount -Subscription $SubscriptionName
+Connect-AzAccount -Subscription $subscriptionId
 
 
 # --------------- Setup module variables ---------------------------------- 
@@ -43,7 +43,7 @@ $serverAzureAdIdentity = (Get-AzADServicePrincipal -SearchString $ServerName).Id
 
 # Grant server access to data lake (requires Owner permissions)
 # $subscriptionId = (Get-AzSubscription -SubscriptionName $subscriptionName).SubscriptionId
-$subscriptionId = $subscriptionName
+# $subscriptionId = $subscriptionName
 $permissionScope = "/subscriptions/$subscriptionId/resourceGroups/$resourceGroupName/providers/Microsoft.Storage/storageAccounts/$dataLakeAccountName"
 New-AzRoleAssignment -ObjectId $serverAzureAdIdentity -RoleDefinitionName $StorageContributorRole -Scope $permissionScope
 
