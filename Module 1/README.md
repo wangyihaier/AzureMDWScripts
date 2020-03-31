@@ -95,6 +95,32 @@ In this section, you will copy two sets of data from your machine to Azure Data 
 2.	Create a new data factory pipeline called ‘USGSInitialCopy’. 
     ```powershell
     # Create a data factory pipeline to copy from on-prem to ADLS Gen2
-    New-AzResourceGroupDeployment -Name USGSPipelineDeployment -ResourceGroupName $resourceGroupName -TemplateFile "C:\USGSdata\loadingtemplates\usgs_copypipeline.json" -dataFactoryName $dataFactoryName -integrationRuntimeName $integrationRuntimeName -cloudDWConnectionString $dwConnectionString_Secure -dataLakeURL $dataLakeURL -dataLakeAccountKey $dataLakeAccountKey_Secure -localFileSystemPassword $localUserPassword_Secure -localUserId $localUserId -localServerName $env:computername
+    New-AzResourceGroupDeployment -Name USGSPipelineDeployment `-ResourceGroupName $resourceGroupName -TemplateFile "C:\USGSdata\loadingtemplates\usgs_copypipeline.json" -dataFactoryName $dataFactoryName -integrationRuntimeName $integrationRuntimeName -cloudDWConnectionString $dwConnectionString_Secure -dataLakeURL $dataLakeURL -dataLakeAccountKey $dataLakeAccountKey_Secure -localFileSystemPassword $localUserPassword_Secure -localUserId $localUserId -localServerName $env:computername
 
     ```
+3.	Ensure the deployment to data factory completes successfully (as shown below):
+
+    ![ADF Deployment ](../images/M1_ADFCreated.png "Ensure the deployment to data factory completes successfully")
+
+4.	Manually trigger the pipeline to start the data copy. 
+    ```powershell
+    # Manually trigger pipeline
+    $pipelineRunId = Invoke-AzDataFactoryV2Pipeline -ResourceGroupName $resourceGroupName -DataFactoryName $dataFactoryName -PipelineName "USGSInitialCopy" 
+    ```
+5.	You can monitor the status of the copy operation by running the command Get-AzDataFactoryV2PipelineRun. You can also monitor the status visually by logging into the Azure portal, navigating to your Azure Data Factory instance and viewing running pipelines.
+
+    Monitor the progress of the pipeline until the copy activity is completed. 
+      ```powershell
+    # Monitor pipeline status
+    Get-AzDataFactoryV2PipelineRun -ResourceGroupName $resourceGroupName -DataFactoryName $dataFactoryName -PipelineRunId $pipelineRunId 
+    ```
+
+    ![ADF Monitoring](../images/M1_ADFMonitorPS.png "Monitor the progress of the pipeline from the console")
+
+    ![ADF Monitoring](../images/M1_ADFMonitorUI.png "Monitor the progress of the pipeline from the UI")
+
+6.  Once done, launch the [Azure portal](http://portal.azure.com/) and navigate to your Data Lake Storage Account. In there, you should see blob containers ‘fireEvents’, and ‘weatherEvents’ with all the data copied via the pipeline.
+
+    ![ADLS FireEvents View](../images/M1_ADLSFireEvents.png "View FireEvents at ADLS blog container")
+
+     ![ADLS WheatherEvents View](../images/M1_ADLSWheatherEvents.png "View WheatherEvents at ADLS blog container")
