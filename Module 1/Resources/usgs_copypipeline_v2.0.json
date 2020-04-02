@@ -2,7 +2,7 @@
     "$schema": "http://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
     "contentVersion": "1.0.0.0",
     "parameters": {
-        "factoryName": {
+        "dataFactoryName": {
             "type": "string",
             "metadata": "Data Factory name",
             "defaultValue": "usgsdatafactory"
@@ -35,12 +35,12 @@
         }
     },
     "variables": {
-        "factoryId": "[concat('Microsoft.DataFactory/factories/', parameters('factoryName'))]",
+        "factoryId": "[concat('Microsoft.DataFactory/factories/', parameters('dataFactoryName'))]",
         "onsiteDbConnectionString": "[concat('integrated security=True;data source=', parameters('localServerName'), ';initial catalog=fireevents')]"
     },
     "resources": [
         {
-            "name": "[concat(parameters('factoryName'), '/USGSInitialCopy')]",
+            "name": "[concat(parameters('dataFactoryName'), '/USGSInitialCopy')]",
             "type": "Microsoft.DataFactory/factories/pipelines",
             "apiVersion": "2018-06-01",
             "properties": {
@@ -217,7 +217,7 @@
             ]
         },
         {
-            "name": "[concat(parameters('factoryName'), '/WeatherEventFiles')]",
+            "name": "[concat(parameters('dataFactoryName'), '/WeatherEventFiles')]",
             "type": "Microsoft.DataFactory/factories/datasets",
             "apiVersion": "2018-06-01",
             "properties": {
@@ -238,7 +238,7 @@
             ]
         },
         {
-            "name": "[concat(parameters('factoryName'), '/onsiteSQLServerTable')]",
+            "name": "[concat(parameters('dataFactoryName'), '/onsiteSQLServerTable')]",
             "type": "Microsoft.DataFactory/factories/datasets",
             "apiVersion": "2018-06-01",
             "properties": {
@@ -267,7 +267,7 @@
             ]
         },
         {
-            "name": "[concat(parameters('factoryName'), '/dataLakeBinaryBlobInstance')]",
+            "name": "[concat(parameters('dataFactoryName'), '/dataLakeBinaryBlobInstance')]",
             "type": "Microsoft.DataFactory/factories/datasets",
             "apiVersion": "2018-06-01",
             "properties": {
@@ -307,7 +307,7 @@
             "dependsOn": []
         },
         {
-            "name": "[concat(parameters('factoryName'), '/usgsonpremserver')]",
+            "name": "[concat(parameters('dataFactoryName'), '/usgsonpremserver')]",
             "type": "Microsoft.DataFactory/factories/linkedServices",
             "apiVersion": "2018-06-01",
             "properties": {
@@ -331,7 +331,7 @@
             ]
         },
         {
-            "name": "[concat(parameters('factoryName'), '/USGSLocalFileSystemConnection')]",
+            "name": "[concat(parameters('dataFactoryName'), '/USGSLocalFileSystemConnection')]",
             "type": "Microsoft.DataFactory/factories/linkedServices",
             "apiVersion": "2018-06-01",
             "properties": {
@@ -355,7 +355,7 @@
             ]
         },
         {
-            "name": "[concat(parameters('factoryName'), '/dataLakeStorageConnection')]",
+            "name": "[concat(parameters('dataFactoryName'), '/dataLakeStorageConnection')]",
             "type": "Microsoft.DataFactory/factories/linkedServices",
             "apiVersion": "2018-06-01",
             "properties": {
@@ -368,7 +368,7 @@
             "dependsOn": []
         },
         {
-            "name": "[concat(parameters('factoryName'), '/dataLakeCSVBlobInstance')]",
+            "name": "[concat(parameters('dataFactoryName'), '/dataLakeCSVBlobInstance')]",
             "type": "Microsoft.DataFactory/factories/datasets",
             "apiVersion": "2018-06-01",
             "properties": {

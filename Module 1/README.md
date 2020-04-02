@@ -94,7 +94,7 @@ In this section, you will copy two sets of data from your machine to Azure Data 
 2.	Create a new data factory pipeline called ‘USGSInitialCopy’. 
     ```powershell
     # Create a data factory pipeline to copy from on-prem to ADLS Gen2
-    New-AzResourceGroupDeployment -Name USGSPipelineDeployment `-ResourceGroupName $resourceGroupName -TemplateFile "C:\USGSdata\loadingtemplates\usgs_copypipeline.json" -dataFactoryName $dataFactoryName -integrationRuntimeName $integrationRuntimeName -cloudDWConnectionString $dwConnectionString_Secure -dataLakeURL $dataLakeURL -dataLakeAccountKey $dataLakeAccountKey_Secure -localFileSystemPassword $localUserPassword_Secure -localUserId $localUserId -localServerName $env:computername
+    New-AzResourceGroupDeployment -Name USGSPipelineDeployment -ResourceGroupName $resourceGroupName -TemplateFile "C:\USGSdata\loadingtemplates\usgs_copypipeline_v2.0.json" -dataFactoryName $dataFactoryName -integrationRuntimeName $integrationRuntimeName -cloudDWConnectionString $dwConnectionString_Secure -dataLakeURL $dataLakeURL -dataLakeAccountKey $dataLakeAccountKey_Secure -localFileSystemPassword $localUserPassword_Secure -localUserId $localUserId -localServerName $env:computername
 
     ```
 3.	Ensure the deployment to data factory completes successfully (as shown below):
