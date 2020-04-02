@@ -1,9 +1,21 @@
-﻿$subscriptionId = 'b221e5a7-d112-44a3-9a93-4acc1457ad0a' 
+﻿
+
+
+# ----------- Pass-in the variables below to set session-wide variables that will be used later ---------------------------------------------------------
+param (
+    [Parameter(Mandatory=$true)] [string]$subscriptionId,
+	[Parameter(Mandatory=$true)] [string]$resourceGroupName,
+    [Parameter(Mandatory=$true)] [string]$participantNumber    
+)
+$ErrorActionPreference = "Stop"
+<# 
+$subscriptionId = 'b221e5a7-d112-44a3-9a93-4acc1457ad0a' 
 $participantNumber = 123 
-$resourceGroupName = 'wymoderndw'
+$resourceGroupName = 'wymoderndw' #>
 
 Connect-AzAccount -Subscription $subscriptionId
 
+# ------- Setup module variables --------------------------
 $serverName = 'usgsserver' + $participantNumber
 $fullyQualifiedServerName = $serverName + '.database.windows.net'
 $dataWarehouseName = 'usgsdataset'
@@ -12,10 +24,11 @@ $dataLakeName = 'usgsdatalake' + $participantNumber
 $adminUser = 'usgsadmin'
 $adminPassword = 'P@ssword' + $participantNumber   
 
-
+# Create an integration runtime instance
 Set-AzDataFactoryV2IntegrationRuntime -ResourceGroupName $resourceGroupName -DataFactoryName $dataFactoryName -Name 'dataMovementEngine' -Type SelfHosted -Description "Integration runtime to copy on-prem SQL Server data to cloud" 
 
 
+# Retrieve integration runtime instance key
 Get-AzDataFactoryV2IntegrationRuntimeKey -ResourceGroupName $resourceGroupName -DataFactoryName $dataFactoryName -Name dataMovementEngine
 
 
@@ -29,6 +42,17 @@ $localUserPassword_Secure = ConvertTo-SecureString -String $localUserPassword -A
 $dataLakeAccountKey = (Get-AzStorageAccountKey -ResourceGroupName $resourceGroupName -Name $dataLakeName).Value[0] 
 $dataLakeAccountKey_Secure = ConvertTo-SecureString -String $dataLakeAccountKey -AsPlainText -Force
 $dataLakeURL = "https://$dataLakeName.dfs.core.windows.net"  
+
+
+#----------------Grant acess to data lake for Data Factory 
+# Get ServicePrincipalId assigend for Data Factory
+# List details of the Storage Blob Data Contributor Role
+$StorageContributorRole = "Storage Blob Data Contributor"
+Get-AzRoleDefinition -Name $StorageContributorRole
+
+$dataFactoryAzureAdIdentity = (Get-AzDataFactoryV2 -ResourceGroupName $resourceGroupName -Name $dataFactoryName ).Identity.PrincipalId
+$permissionScope = "/subscriptions/$subscriptionId/resourceGroups/$resourceGroupName/providers/Microsoft.Storage/storageAccounts/$dataLakeName"
+New-AzRoleAssignment -ObjectId $dataFactoryAzureAdIdentity -RoleDefinitionName $StorageContributorRole -Scope $permissionScope
 
 
 New-AzResourceGroupDeployment -Name USGSPipelineDeployment -ResourceGroupName $resourceGroupName -TemplateFile "C:\USGSdata\loadingtemplates\usgs_copypipeline.json" -dataFactoryName $dataFactoryName -integrationRuntimeName $integrationRuntimeName -cloudDWConnectionString $dwConnectionString_Secure -dataLakeURL $dataLakeURL -dataLakeAccountKey $dataLakeAccountKey_Secure -localFileSystemPassword $localUserPassword_Secure -localUserId $localUserId -localServerName $env:computername

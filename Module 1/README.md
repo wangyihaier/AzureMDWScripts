@@ -47,8 +47,7 @@ In this section, you will configure an Azure Data Factory self-hosted Integratio
 1. Create an integration runtime instance in the existing data factory
 ```powershell
 # Create an integration runtime instance
-Set-AzDataFactoryV2IntegrationRuntime -ResourceGroupName $resourceGroupName `
--DataFactoryName $dataFactoryName -Name 'dataMovementEngine' -Type SelfHosted `
+Set-AzDataFactoryV2IntegrationRuntime -ResourceGroupName $resourceGroupName -DataFactoryName $dataFactoryName -Name 'dataMovementEngine' -Type SelfHosted 
 -Description "Integration runtime to copy on-prem SQL Server data to cloud" 
 ```
 2. Retrieve the Integration Runtime key for the instance you just created. The command will display two IR keys (AuthKey1 and AuthKey2). Copy and paste AuthKey1 into a notepad window. 
