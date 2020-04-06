@@ -124,3 +124,110 @@ The easiest way to do this is by using the ‘Create Table AS Select’ (CTAS) s
 
     ```
       ![SQL Execution Plan](../images/M4_ExecutionPlan2.png "Execution Plan for external table")
+
+## Workload Importance and Classifiers
+
+When your SQL Data Warehouse is fully utilized, any new queries are automatically queued and granted resources in a first-in, first-out basis – the first query in the queue is the next to get available resources.  However, not all queries are created equal, and sometimes you may want a higher priority query to get access to resources faster.  Workload importance allows you to grant users and workloads higher (or lower) priority, ensuring they get resources as quickly as possible.  
+
+**In SQL Server Management Studio (SSMS) as usgsadmin:**
+
+1.	Connect the Object Explorer with the credentials provided below – **making sure to replace ‘## with your participant number:**
+* **Server name:** usgsserver##.database.windows.net
+* **Authentication:** SQL Server Authentication
+* **Username:** usgsadmin
+* **Password:** P@ssword##
+
+    ![SSMS Login](../images/M4_adminLogin.png "Login with admin user")
+
+ 2.	Create two classifiers as the admin users – classifiers allow you to assign importance and resource groups to different users.  
+    ```sql
+    --Normal importance for Employee
+    CREATE WORKLOAD CLASSIFIER ForestryEmployee
+    WITH
+        (WORKLOAD_GROUP = 'smallrc'
+        ,MEMBERNAME = 'CaliforniaForestryEmployee'
+        ,IMPORTANCE = NORMAL);
+
+    --High importance for Manager
+    CREATE WORKLOAD CLASSIFIER ForestryManager
+    WITH
+        (WORKLOAD_GROUP = 'smallrc'
+        ,MEMBERNAME = 'CaliforniaForestryManager'
+        ,IMPORTANCE = HIGH);
+
+    ```
+**Simulate a busy system prioritizing queries by using workload importance:**
+The easiest way to test workload importance yourself is to look for differences in the submission time of a query (when it enters the queue) and the start time of a query (when it’s granted resources and starts running).  
+With ‘normal’ importance across all queries, the order of the submission times and start times will be the same since it’s a FIFO queue. 
+However, a query with ‘high’ importance may have a later submission time but an earlier start time than less important queries because it can jump the queue.
+
+**In SQL Server Management Studio (SSMS):**
+1.	Connect to the SQL Data Warehouse using the ‘CaliforniaForestryEmployee’ credentials provided below – **making sure to replace ‘##’ with your participant number:**
+* **Server name:** usgsserver##.database.windows.net
+* **Authentication:** SQL Server Authentication
+* **Username:** CaliforniaForestryEmployee
+* **Password:** P@ssword##
+
+    ![SSMS Login](../images/M4_EmployeeLogin.png "Login with normal employee user")
+
+2.	Open another connection to the SQL Data Warehouse using the ‘CaliforniaForestryManager’ credentials provided below – **making sure to replace ‘##’ with your participant number:**
+* **Server name:** usgsserver##.database.windows.net
+* **Authentication:** SQL Server Authentication
+* **Username:** CaliforniaForestryManager
+* **Password:** P@ssword##
+
+    ![SSMS Login](../images/M4_ManagerLogin.png "Login with manager user")
+
+3.	Right-click on the ‘usgsdataset’ data warehouse and create 5 new query windows using the CaliforniaForestryEmployee connection.
+
+    ![SSMS Window](../images/M4_EmployeeConnection.png "Execute the query with normal employee user")
+
+4.	Right-click on the ‘usgsdaset’ data warehouse and create 1 new query window using the CaliforniaForestryManager connection. 
+
+    ![SSMS Window](../images/M4_EmployeeConnection.png "Execute the query with manager user")
+
+5.	To simulate multiple active queries on the system, you’ll submit the same query to each of the active windows you have open. 
+Submit the employee queries first, and the manager query last:
+
+    ```sql
+    -- Yearly temperature averages and precipitation per state for years between 2004 and 2019
+    SELECT	StateName,
+    StatePostalCode,
+    Year(ObservationDate) AS MeasurementYear,
+    AVG(CASE ObservationTypeCode WHEN 'TAVG' THEN ObservationValueCorrected END) AS AvgTemperature_degCelsius,
+    AVG(CASE ObservationTypeCode WHEN 'TMIN' THEN ObservationValueCorrected END) AS AvgMinTemperature_degCelsius,
+    AVG(CASE ObservationTypeCode WHEN 'TMAX' THEN ObservationValueCorrected END) AS AvgMaxTemperature_degCelsius,
+    AVG(CASE ObservationTypeCode WHEN 'PRCP' THEN ObservationValueCorrected END) AS AvgPrecipitation_mm
+    FROM	prod.factWeatherMeasurements weather
+    JOIN	prod.dimusfipscodes fips on weather.fipscountycode = fips.fipscode
+    WHERE	Year(ObservationDate) > 2004 AND Year(ObservationDate) < 2019
+    GROUP	BY StateName, StatePostalCode, Year(ObservationDate)
+    ORDER	BY StatePostalCode, MeasurementYear
+
+    ```
+
+    ![SSMS Window](../images/M4_HeavyQueryResult.png "The result of the heavy query ")
+
+6.	Open a new query window using the ‘usgsadmin’ login. Run the query below to analyze the order in which the queries were handled by SQL DW. Notice how long the ForestryManager’s query has to wait in the queue before being worked on.  That’s workload importance!  
+
+    ```sql
+    --View query importance and request information
+    SELECT	DISTINCT a.request_id,
+    a.session_id,
+    b.login_name,
+    a.resource_class,
+    a.status,
+    b.app_name,
+    a.submit_time,
+    a.start_time,
+    a.end_time,
+    DATEDIFF(s,a.submit_time,a.start_time) AS TimeInQueue_secs,
+    a.total_elapsed_time/1000.0 AS TotalElapsedTime_secs,
+    a.total_elapsed_time/60000.0 AS TotalElapsedTime_mins,
+    a.command
+    FROM	sys.dm_pdw_exec_requests a
+    JOIN	sys.dm_pdw_exec_sessions b ON b.session_id = a.session_id 
+    LEFT	OUTER JOIN sys.dm_pdw_waits c on c.request_id = a.request_id and c.session_id = a.session_id
+    WHERE	b.login_name IN ('CaliforniaForestryEmployee', 'CaliforniaForestryManager') AND resource_class IS NOT NULL
+    ORDER	BY submit_time ASC 
+    ```
