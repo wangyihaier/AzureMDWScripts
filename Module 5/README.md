@@ -13,38 +13,38 @@ If you haven’t run through the earlier modules in the series, launch PowerShel
 ## Login to your Azure subscription in PowerShell
 The first few sections of this module will use PowerShell to configure settings and values. If you haven’t previously logged into your Azure account, run the following to setup your PowerShell session.
 
-    ```powershell
-    # ------- Edit the variables below to set session-wide variables --------- 
-    $subscriptionName = '<SubscriptionName>' 
-    $participantNumber = <ParticipantNumber> 
-    $resourceGroupName = '<ResourceGroupName>'
+```powershell
+# ------- Edit the variables below to set session-wide variables --------- 
+$subscriptionName = '<SubscriptionName>' 
+$participantNumber = <ParticipantNumber> 
+$resourceGroupName = '<ResourceGroupName>'
 
-    # Log into your Azure account
-    Connect-AzAccount -Subscription $SubscriptionName
+# Log into your Azure account
+Connect-AzAccount -Subscription $SubscriptionName
 
-    ```
+```
 Run the following to setup the variables you’ll use to configure Azure PowerShell commands in the lab:
 
-    ```powershell
-    Import-Module "C:\USGSdata\BruteForceSQL\Invoke-LoginAttack" 
+```powershell
+Import-Module "C:\USGSdata\BruteForceSQL\Invoke-LoginAttack" 
 
-    # ------- Setup module variables ---------
-    $serverName = 'usgsserver' + $participantNumber
-    $fullyQualifiedServerName = $serverName + '.database.windows.net'
-    $dataLakeAccountName = 'usgsdatalake' + $participantNumber
-    $blobStorageAccountName = 'usgsstaging' + $participantNumber
-    $securityScanResultsContainerName = 'vulnerabilityresults'
-    $dataWarehouseName = 'usgsdataset'
-    $restorePointLabel = 'preapplicationupgrade_' + (Get-Date -Format FileDateTimeUniversal)
-    $restoredWarehouseName = 'usgsdataset_restored'
-    $userListLocation = "C:\USGSdata\BruteForceSQL\userList.txt"  
-    $passwordListLocation = "C:\USGSdata\BruteForceSQL\passwordList.txt" 
-    $dbUserName = 'usgsadmin'
-    $dbPassword = 'P@ssword' + $participantNumber
-    $securePasswordString = ConvertTo-SecureString $dbPassword -AsPlainText -Force
-    $dbCredentials = New-Object System.Management.Automation.PSCredential($dbUserName, $securePasswordString)
+# ------- Setup module variables ---------
+$serverName = 'usgsserver' + $participantNumber
+$fullyQualifiedServerName = $serverName + '.database.windows.net'
+$dataLakeAccountName = 'usgsdatalake' + $participantNumber
+$blobStorageAccountName = 'usgsstaging' + $participantNumber
+$securityScanResultsContainerName = 'vulnerabilityresults'
+$dataWarehouseName = 'usgsdataset'
+$restorePointLabel = 'preapplicationupgrade_' + (Get-Date -Format FileDateTimeUniversal)
+$restoredWarehouseName = 'usgsdataset_restored'
+$userListLocation = "C:\USGSdata\BruteForceSQL\userList.txt"  
+$passwordListLocation = "C:\USGSdata\BruteForceSQL\passwordList.txt" 
+$dbUserName = 'usgsadmin'
+$dbPassword = 'P@ssword' + $participantNumber
+$securePasswordString = ConvertTo-SecureString $dbPassword -AsPlainText -Force
+$dbCredentials = New-Object System.Management.Automation.PSCredential($dbUserName, $securePasswordString)
 
-    ```
+```
 ## Create user-defined restore points before an application upgrade
 Azure SQL Data Warehouse includes automated database snapshots that can be leveraged to recover or copy a data warehouse to a previous state. These snapshots support an eight-hour recovery point objective (RPO) and are available to be used for 7 days. If you require a faster RPO or you require your snapshot to be available for longer than 7 days, you can manually trigger a snapshot to save the current database state. This is good practice to follow before and after large modifications to your data warehouse - it allows quicker recovery times in the event of any workload interruptions or user errors.
 
