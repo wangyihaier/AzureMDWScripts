@@ -13,6 +13,7 @@ $admin0 = "usgsvm00\usgsadmin"
 $admin106 = "usgsvm106\usgsadmin"
 $admin0Exists = Invoke-SqlCmd -Query "SELECT * FROM sys.syslogins WHERE loginname = '$admin0'" -ServerInstance $env:computername -Database "master" -Credential $adminCredential -ErrorAction SilentlyContinue
 $admin106Exists = Invoke-SqlCmd -Query "SELECT * FROM sys.syslogins WHERE loginname = '$admin106'" -ServerInstance $env:computername -Database "master" -Credential $adminCredential -ErrorAction SilentlyContinue
+$userExists = Invoke-SqlCmd -Query "SELECT * FROM sys.syslogins WHERE loginname = '$currentUser'" -ServerInstance $env:computername -Database "master" -Credential $adminCredential -ErrorAction SilentlyContinue
 if ($adminExists)
 {
     Remove-SqlLogin -ServerInstance $env:computername -LoginName "usgsvm00\usgsadmin" -Credential $adminCredential -RemoveAssociatedUsers -Force -ErrorAction SilentlyContinue
@@ -21,6 +22,11 @@ if ($admin106Exists)
 {
     Remove-SqlLogin -ServerInstance $env:computername -LoginName "usgsvm106\usgsadmin" -Credential $adminCredential -RemoveAssociatedUsers -Force -ErrorAction SilentlyContinue
 }
+if ($userExists)
+{
+    Remove-SqlLogin -ServerInstance $env:computername -LoginName $currentUser -Credential $adminCredential -RemoveAssociatedUsers -Force -ErrorAction SilentlyContinue
+}
+
 
 # Add current user login if not exists
 $userExists = Invoke-SqlCmd -Query "SELECT * FROM sys.syslogins WHERE loginname = '$currentUser'" -ServerInstance $env:computername -Database "master" -Credential $adminCredential -ErrorAction SilentlyContinue
