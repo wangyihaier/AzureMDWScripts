@@ -6,6 +6,8 @@
 $adminPassword = ConvertTo-SecureString "P@ssword00" -AsPlainText -Force
 $adminCredential = New-Object System.Management.Automation.PSCredential('usgsadmin',$adminPassword)
 $currentUser = "$env:computername\usgsadmin"
+$sharedDataFolder = "USGSData"
+$sharedDataPath = "C:\USGSData"
 
 # Add current user login
 Write-Output "Adding current user as sql server admin..." | Out-File -FilePath "C:\USGSData\SetupScripts\setuplog.txt" -Append
@@ -32,6 +34,18 @@ Remove-SqlLogin -ServerInstance $env:computername -LoginName "usgsvm00\usgsadmin
 Remove-SqlLogin -ServerInstance $env:computername -LoginName "usgsvm106\usgsadmin" -Credential $adminCredential -RemoveAssociatedUsers -Force -ErrorAction SilentlyContinue *>&1 | Out-File -FilePath "C:\USGSData\SetupScripts\setuplog.txt" -Append
 Remove-SqlLogin -ServerInstance $env:computername -LoginName "usgsvm605\usgsadmin" -Credential $adminCredential -RemoveAssociatedUsers -Force -ErrorAction SilentlyContinue *>&1 | Out-File -FilePath "C:\USGSData\SetupScripts\setuplog.txt" -Append
 
+
+# Share the data folder
+$sharedFolderExists = Get-SmbShare -Name $sharedDataFolder  -ErrorAction SilentlyContinue
+if($sharedFolderExists)
+{
+    Remove-SmbShare -Name $sharedDataFolder -Force
+}
+if ( Test-Path -Path $sharedDataPath -PathType Container ) 
+{
+    New-SMBShare –Name $sharedDataFolder –Path  $sharedDataPath –FullAccess $currentUser 
+}
+        
 # Add trusted Microsoft authentication sites to Internet Explorer
 Write-Output "Adding trusted Microsoft auth sites to Internet Explorer" | Out-File -FilePath "C:\USGSData\SetupScripts\setuplog.txt" -Append
 Set-location -Path "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Internet Settings\ZoneMap\EscDomains"
