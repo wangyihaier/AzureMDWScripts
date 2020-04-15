@@ -53,8 +53,19 @@ Set-AzDataFactoryV2IntegrationRuntime -ResourceGroupName $resourceGroupName -Dat
 2. Retrieve the Integration Runtime key for the instance you just created. The command will display two IR keys (AuthKey1 and AuthKey2). Copy and paste AuthKey1 into a notepad window. 
 ```powershell
 # Retrieve integration runtime instance key
-Get-AzDataFactoryV2IntegrationRuntimeKey -ResourceGroupName $resourceGroupName -DataFactoryName $dataFactoryName -Name dataMovementEngine
+$AuthKeys = Get-AzDataFactoryV2IntegrationRuntimeKey -ResourceGroupName $resourceGroupName -DataFactoryName $dataFactoryName -Name dataMovementEngine
+
+# Print out keys
+echo $AuthKeys
 ```
+**Upon this step, you could try to setup Integration Runtime manually follwoing the below steps of 3 to 5. Otherwise, you could run the below script to automate it.** 
+
+```powershell
+# Install & Register Integration Runtime Gateway
+.\gatewayInstall.ps1 $AuthKeys.AuthKey1
+```
+
+
 3.	Open the Microsoft Integration Runtime Configuration Manager on your computer. Paste the IR Key into the registration window and click ‘Register’. 
 
     ![Integration Runtime Configuration Manager](../images/M1_IntegrationRuntime_1.png "Open the Microsoft Integration Runtime Configuration Manager")

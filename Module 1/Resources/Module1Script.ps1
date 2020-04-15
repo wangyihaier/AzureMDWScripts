@@ -29,7 +29,10 @@ Set-AzDataFactoryV2IntegrationRuntime -ResourceGroupName $resourceGroupName -Dat
 
 
 # Retrieve integration runtime instance key
-Get-AzDataFactoryV2IntegrationRuntimeKey -ResourceGroupName $resourceGroupName -DataFactoryName $dataFactoryName -Name dataMovementEngine
+$AuthKeys = Get-AzDataFactoryV2IntegrationRuntimeKey -ResourceGroupName $resourceGroupName -DataFactoryName $dataFactoryName -Name dataMovementEngine
+
+# Install & Register Integration Runtime Gateway
+.\gatewayInstall.ps1 $AuthKeys.AuthKey1
 
 
 $localUserPassword = "usgsP@ssword" + $participantNumber   
