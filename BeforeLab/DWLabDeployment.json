@@ -10,7 +10,7 @@
         },
         "deploymentLocations": {
             "type": "string",
-            "defaultValue": "West US 2",
+            "defaultValue": "Southeast Asia",
             "allowedValues": [
                 "East Asia",
                 "Southeast Asia",
@@ -39,9 +39,11 @@
         "usgsServer": "[concat('usgsserver', parameters('userNumber'))]",
         "location": "[replace(parameters('deploymentLocations'),' ','')]",
         "administratorLogin": "usgsadmin",
+        "administratorLoginPasswordSecretName": "administratorLoginPasswordSecretName",
         "administratorLoginPassword": "[concat('P@ssword', parameters('userNumber'))]",
         "datawarehouseName": "usgsdataset",
         "virtualMachineName": "[concat('usgsvm', parameters('userNumber'))]",
+        "virtualMachinePasswordSecretName": "virtualMachinePasswordSecretName",
         "virtualMachinePassword": "[concat('usgsP@ssword', parameters('userNumber'))]",
         "vnetName": "[concat('usgsvirtualnetwork', parameters('userNumber'))]",
         "subnetName": "usgsSubnet",
@@ -59,30 +61,74 @@
         "networkSecurityGroupName": "[concat(variables('virtualMachineName'),'-nsg')]",
         "adbWorkspaceName": "[concat('usgsdatabricks', parameters('userNumber'))]",
         "adbPricingTier": "premium",
-        "managedResourceGroupName": "[concat('databricks-rg-', variables('adbWorkspaceName'), '-', uniqueString(variables('adbWorkspaceName'), resourceGroup().id))]"
+        "managedResourceGroupName": "[concat('databricks-rg-', variables('adbWorkspaceName'), '-', uniqueString(variables('adbWorkspaceName'), resourceGroup().id))]",
+        "keyVaultName": "[concat('usgskv', parameters('userNumber'))]"
     },
     "resources": [
+        {
+            "apiVersion": "2018-05-01",
+            "name": "linkedTemplate-keyvault",
+            "type": "Microsoft.Resources/deployments",
+            "properties": {
+                "mode": "incremental",
+                "templateLink": {
+                    "uri": "[uri(deployment().properties.templateLink.uri, 'AzureKeyVaultDeployment.json')]",
+                    "contentVersion": "1.0.0.0"
+                },
+                "parameters": {
+                    "keyVaultName": {
+                        "value": "[variables('keyVaultName')]"
+                    },
+                    "enabledForTemplateDeployment": {
+                        "value": true
+                    },
+                    "secretsObject": {
+                        "value": {
+                            "secrets": [
+                                {
+                                    "secretName": "[variables('administratorLoginPasswordSecretName')]",
+                                    "secretValue": "[variables('administratorLoginPassword')]"
+                                },
+                                {
+                                    "secretName": "[variables('virtualMachinePasswordSecretName')]",
+                                    "secretValue": "[variables('virtualMachinePassword')]"
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
         {
             "type": "Microsoft.Databricks/workspaces",
             "name": "[variables('adbWorkspaceName')]",
             "location": "[variables('location')]",
+            "dependsOn": ["linkedTemplate-keyvault"],
             "apiVersion": "2018-04-01",
             "sku": {
                 "name": "[variables('adbPricingTier')]"
             },
             "properties": {
                 "managedResourceGroupId": "[concat(subscription().id, '/resourceGroups/', variables('managedResourceGroupName'))]"
-              }
+            }
         },
         {
             "name": "[variables('usgsServer')]",
             "location": "[variables('location')]",
+            "dependsOn": ["linkedTemplate-keyvault"],
             "type": "Microsoft.Sql/servers",
             "apiVersion": "2017-10-01-preview",
             "properties": {
                 "version": "12.0",
                 "administratorLogin": "[variables('administratorLogin')]",
-                "administratorLoginPassword": "[variables('administratorLoginPassword')]"
+                "administratorLoginPassword": {
+                    "reference": {
+                        "keyVault": {
+                            "id": "[reference('linkedTemplate-keyvault').outputs.rkkeyvault.value]"
+                        },
+                        "secretName": "[variables('administratorLoginPasswordSecretName')]"
+                    }
+                }
             },
             "tags": {
                 "participantId": "[parameters('userNumber')]"
@@ -169,7 +215,8 @@
             "identity": {
                 "type": "SystemAssigned"
             },
-            "properties": {}
+            "properties": {
+            }
         },
         {
             "type": "Microsoft.Storage/storageAccounts",
@@ -221,6 +268,7 @@
             "name": "[variables('virtualMachineName')]",
             "apiVersion": "2018-06-01",
             "location": "[variables('location')]",
+            "dependsOn": ["linkedTemplate-keyvault"],
             "tags": {
                 "participantId": "[parameters('userNumber')]"
             },
@@ -228,7 +276,14 @@
                 "osProfile": {
                     "computerName": "[variables('virtualMachineName')]",
                     "adminUsername": "[variables('administratorLogin')]",
-                    "adminPassword": "[variables('virtualMachinePassword')]",
+                    "adminPassword": {
+                        "reference": {
+                            "keyVault": {
+                                "id": "[reference('linkedTemplate-keyvault').outputs.rkkeyvault.value]"
+                            },
+                            "secretName": "[variables('virtualMachinePasswordSecretName')]"
+                        }
+                    },
                     "windowsConfiguration": {
                         "enableAutomaticUpdates": true,
                         "provisionVmAgent": "true"
@@ -239,7 +294,7 @@
                 },
                 "storageProfile": {
                     "imageReference": {
-                        "id":"/subscriptions/b221e5a7-d112-44a3-9a93-4acc1457ad0a/resourceGroups/wyarm/providers/Microsoft.Compute/galleries/wysharedimages/images/AzureMDWLab"
+                        "id": "/subscriptions/b221e5a7-d112-44a3-9a93-4acc1457ad0a/resourceGroups/wyarm/providers/Microsoft.Compute/galleries/wysharedimages/images/AzureMDWLab"
                     },
                     "osDisk": {
                         "createOption": "FromImage",
@@ -324,8 +379,10 @@
                             "protocol": "Tcp",
                             "access": "Allow",
                             "direction": "Inbound",
-                            "sourceApplicationSecurityGroups": [],
-                            "destinationApplicationSecurityGroups": [],
+                            "sourceApplicationSecurityGroups": [
+                            ],
+                            "destinationApplicationSecurityGroups": [
+                            ],
                             "sourceAddressPrefix": "*",
                             "sourcePortRange": "*",
                             "destinationAddressPrefix": "*",
@@ -366,7 +423,14 @@
         },
         "vmPassword": {
             "type": "string",
-            "value": "[variables('virtualMachinePassword')]"
+            "value": {
+                        "reference": {
+                            "keyVault": {
+                                "id": "[reference('linkedTemplate-keyvault').outputs.rkkeyvault.value]"
+                            },
+                            "secretName": "[variables('virtualMachinePasswordSecretName')]"
+                        }
+                    }
         },
         "userNumber": {
             "type": "string",
