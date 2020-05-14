@@ -72,7 +72,7 @@
             "properties": {
                 "mode": "incremental",
                 "templateLink": {
-                    "uri": "[uri(deployment().properties.templateLink.uri, 'AzureKeyVaultDeployment.json')]",
+                    "uri": "https://raw.githubusercontent.com/wangyihaier/AzureMDWScripts/kvdev/BeforeLab/AzureKeyVaultDeployment.json",
                     "contentVersion": "1.0.0.0"
                 },
                 "parameters": {
@@ -103,7 +103,9 @@
             "type": "Microsoft.Databricks/workspaces",
             "name": "[variables('adbWorkspaceName')]",
             "location": "[variables('location')]",
-            "dependsOn": ["linkedTemplate-keyvault"],
+            "dependsOn": [
+                "linkedTemplate-keyvault"
+            ],
             "apiVersion": "2018-04-01",
             "sku": {
                 "name": "[variables('adbPricingTier')]"
@@ -115,7 +117,9 @@
         {
             "name": "[variables('usgsServer')]",
             "location": "[variables('location')]",
-            "dependsOn": ["linkedTemplate-keyvault"],
+            "dependsOn": [
+                "linkedTemplate-keyvault"
+            ],
             "type": "Microsoft.Sql/servers",
             "apiVersion": "2017-10-01-preview",
             "properties": {
@@ -268,7 +272,6 @@
             "name": "[variables('virtualMachineName')]",
             "apiVersion": "2018-06-01",
             "location": "[variables('location')]",
-            "dependsOn": ["linkedTemplate-keyvault"],
             "tags": {
                 "participantId": "[parameters('userNumber')]"
             },
@@ -312,7 +315,8 @@
                 }
             },
             "dependsOn": [
-                "[concat('Microsoft.Network/networkInterfaces/', variables('networkInterfaceName'))]"
+                "[concat('Microsoft.Network/networkInterfaces/', variables('networkInterfaceName'))]",
+                 "linkedTemplate-keyvault"
             ]
         },
         {
@@ -424,13 +428,13 @@
         "vmPassword": {
             "type": "string",
             "value": {
-                        "reference": {
-                            "keyVault": {
-                                "id": "[reference('linkedTemplate-keyvault').outputs.rkkeyvault.value]"
-                            },
-                            "secretName": "[variables('virtualMachinePasswordSecretName')]"
-                        }
-                    }
+                "reference": {
+                    "keyVault": {
+                        "id": "[reference('linkedTemplate-keyvault').outputs.rkkeyvault.value]"
+                    },
+                    "secretName": "[variables('virtualMachinePasswordSecretName')]"
+                }
+            }
         },
         "userNumber": {
             "type": "string",

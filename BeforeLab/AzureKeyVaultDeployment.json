@@ -172,7 +172,7 @@
         "name": "[concat(parameters('keyVaultName'), '/', parameters('secretsObject').secrets[copyIndex()].secretName)]",
         "apiVersion": "2018-02-14",
         "dependsOn": [
-            "[concat('Microsoft.KeyVault/vaults/', variables('keyVaultName'))]"
+            "[concat('Microsoft.KeyVault/vaults/', parameters('keyVaultName'))]"
         ],
         "copy": {
             "name": "secretsCopy",
@@ -186,7 +186,7 @@
     ],
 	"outputs": {
 		"rkkeyvault": {
-			"value": "[resourceId('Microsoft.KeyVault/vaults', variables('keyVaultName'))]",
+			"value": "[resourceId('Microsoft.KeyVault/vaults', parameters('keyVaultName'))]",
 			"type" : "string"
 		}
 	}
