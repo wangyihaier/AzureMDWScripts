@@ -8,6 +8,10 @@
                 "description": "Pick a random 3-digit number. It will be used to create unique deployments."
             }
         },
+        "branch": {
+            "type": "string",
+            "defaultValue": "kvdev"
+        },
         "deploymentLocations": {
             "type": "string",
             "defaultValue": "Southeast Asia",
@@ -35,7 +39,6 @@
         }
     },
     "variables": {
-        "deploymentname": "[concat('usgscontainer', parameters('userNumber'))]",
         "usgsServer": "[concat('usgsserver', parameters('userNumber'))]",
         "location": "[replace(parameters('deploymentLocations'),' ','')]",
         "administratorLogin": "usgsadmin",
@@ -49,20 +52,16 @@
         "subnetName": "usgsSubnet",
         "dataFactoryName": "[concat('usgsdatafactory', parameters('userNumber'))]",
         "dataLakeName": "[concat('usgsdatalake', parameters('userNumber'))]",
-        "serviceObjective": "DW400c",
         "stagingAccountName": "[concat('usgsstaging', parameters('userNumber'))]",
         "stagingContainerName": "stagingcontainer",
-        "vmSize": "Standard_B2ms",
-        "AutoPatchingDayOfWeek": "Sunday",
         "networkInterfaceName": "[concat(variables('virtualMachineName'),'-nic')]",
-        "vnetId": "[resourceId(resourceGroup().name,'Microsoft.Network/virtualNetworks', variables('vnetName'))]",
-        "subnetRef": "[concat(variables('vnetId'), '/subnets/', variables('subnetName'))]",
         "publicIpAddressName": "[concat(variables('virtualMachineName'),'-ip')]",
         "networkSecurityGroupName": "[concat(variables('virtualMachineName'),'-nsg')]",
         "adbWorkspaceName": "[concat('usgsdatabricks', parameters('userNumber'))]",
         "adbPricingTier": "premium",
         "managedResourceGroupName": "[concat('databricks-rg-', variables('adbWorkspaceName'), '-', uniqueString(variables('adbWorkspaceName'), resourceGroup().id))]",
-        "keyVaultName": "[concat('usgskv', parameters('userNumber'))]"
+        "keyVaultName": "[concat('usgskv', parameters('userNumber'))]",
+        "linkedTemplatePrefix": "[concat('https://raw.githubusercontent.com/wangyihaier/AzureMDWScripts/', parameters('branch'),'/BeforeLab/')]"
     },
     "resources": [
         {
@@ -72,7 +71,7 @@
             "properties": {
                 "mode": "incremental",
                 "templateLink": {
-                    "uri": "https://raw.githubusercontent.com/wangyihaier/AzureMDWScripts/kvdev/BeforeLab/AzureKeyVaultDeployment.json",
+                    "uri": "[concat(variables('linkedTemplatePrefix'),'AzureKeyVaultDeployment.json')]",
                     "contentVersion": "1.0.0.0"
                 },
                 "parameters": {
@@ -100,112 +99,96 @@
             }
         },
         {
-            "type": "Microsoft.Databricks/workspaces",
-            "name": "[variables('adbWorkspaceName')]",
-            "location": "[variables('location')]",
+            "apiVersion": "2018-05-01",
+            "name": "linkedTemplate-sqlserver",
+            "type": "Microsoft.Resources/deployments",
             "dependsOn": [
                 "linkedTemplate-keyvault"
             ],
+            "properties": {
+                "mode": "incremental",
+                "templateLink": {
+                    "uri": "[concat(variables('linkedTemplatePrefix'),'AzureSynapseDeployment.json')]",
+                    "contentVersion": "1.0.0.0"
+                },
+                "parameters": {
+
+                    "administratorLogin": {
+                        "value": "[variables('administratorLogin')]"
+                    },
+                    "administratorLoginPassword": {
+                        "reference": {
+                            "keyVault": {
+                                "id": "[reference('linkedTemplate-keyvault').outputs.rkkeyvault.value]"
+                            },
+                            "secretName": "[variables('administratorLoginPasswordSecretName')]"
+                        }
+                    },
+                    "serverName": {
+                        "value": "[variables('usgsServer')]"
+                    },
+                    "databaseName": {
+                        "value": "[variables('datawarehouseName')]"
+                    }
+                }
+            }
+        },
+        {
+            "apiVersion": "2018-05-01",
+            "name": "linkedTemplate-jumpvm",
+            "type": "Microsoft.Resources/deployments",
+            "dependsOn": [
+                "linkedTemplate-keyvault"
+            ],
+            "properties": {
+                "mode": "incremental",
+                "templateLink": {
+                    "uri": "[concat(variables('linkedTemplatePrefix'),'AzureVMDeployment.json')]",
+                    "contentVersion": "1.0.0.0"
+                },
+                "parameters": {
+                    "adminUsername": {
+                        "value": "[variables('administratorLogin')]"
+                    },
+                    "adminPassword": {
+                        "reference": {
+                            "keyVault": {
+                                "id": "[reference('linkedTemplate-keyvault').outputs.rkkeyvault.value]"
+                            },
+                            "secretName": "[variables('virtualMachinePasswordSecretName')]"
+                        }
+                    },
+                    "virtualMachineName": {
+                        "value": "[variables('virtualMachineName')]"
+                    },
+                    "networkInterfaceName": {
+                        "value": "[variables('networkInterfaceName')]"
+                    },
+                    "networkSecurityGroupName": {
+                        "value": "[variables('networkSecurityGroupName')]"
+                    },
+                    "subnetName": {
+                        "value": "[variables('subnetName')]"
+                    },
+                    "virtualNetworkName": {
+                        "value": "[variables('vnetName')]"
+                    },
+                    "publicIpAddressName": {
+                        "value": "[variables('publicIpAddressName')]"
+                    }
+                }
+            }
+        },
+        {
+            "type": "Microsoft.Databricks/workspaces",
+            "name": "[variables('adbWorkspaceName')]",
+            "location": "[variables('location')]",
             "apiVersion": "2018-04-01",
             "sku": {
                 "name": "[variables('adbPricingTier')]"
             },
             "properties": {
                 "managedResourceGroupId": "[concat(subscription().id, '/resourceGroups/', variables('managedResourceGroupName'))]"
-            }
-        },
-        {
-            "name": "[variables('usgsServer')]",
-            "location": "[variables('location')]",
-            "dependsOn": [
-                "linkedTemplate-keyvault"
-            ],
-            "type": "Microsoft.Sql/servers",
-            "apiVersion": "2017-10-01-preview",
-            "properties": {
-                "version": "12.0",
-                "administratorLogin": "[variables('administratorLogin')]",
-                "administratorLoginPassword": {
-                    "reference": {
-                        "keyVault": {
-                            "id": "[reference('linkedTemplate-keyvault').outputs.rkkeyvault.value]"
-                        },
-                        "secretName": "[variables('administratorLoginPasswordSecretName')]"
-                    }
-                }
-            },
-            "tags": {
-                "participantId": "[parameters('userNumber')]"
-            },
-            "resources": [
-                {
-                    "dependsOn": [
-                        "[concat('Microsoft.Sql/servers/',variables('usgsServer'))]"
-                    ],
-                    "apiVersion": "2017-10-01-preview",
-                    "name": "AllowAllAzureIps",
-                    "properties": {
-                        "startIpAddress": "0.0.0.0",
-                        "endIpAddress": "0.0.0.0"
-                    },
-                    "type": "firewallRules"
-                },
-                {
-                    "apiVersion": "2017-10-01-preview",
-                    "dependsOn": [
-                        "[concat('Microsoft.Sql/servers/',variables('usgsServer'))]"
-                    ],
-                    "name": "Open",
-                    "properties": {
-                        "startIpAddress": "0.0.0.0",
-                        "endIpAddress": "255.255.255.255"
-                    },
-                    "type": "firewallRules"
-                }
-            ]
-        },
-        {
-            "dependsOn": [
-                "[concat('Microsoft.Sql/servers/',variables('usgsServer'))]",
-                "[concat('Microsoft.Sql/servers/',variables('usgsServer'),'/firewallrules/AllowAllAzureIps')]",
-                "[concat('Microsoft.Sql/servers/',variables('usgsServer'),'/firewallrules/Open')]"
-            ],
-            "name": "[concat(variables('usgsServer'),'/',variables('datawarehouseName'))]",
-            "location": "[variables('location')]",
-            "type": "Microsoft.Sql/servers/databases",
-            "apiVersion": "2017-10-01-preview",
-            "sku": {
-                "name": "[variables('serviceObjective')]"
-            },
-            "tags": {
-                "participantId": "[parameters('userNumber')]"
-            },
-            "properties": {
-                "collation": "SQL_Latin1_General_CP1_CI_AS"
-            }
-        },
-        {
-            "apiVersion": "2016-03-30",
-            "type": "Microsoft.Network/virtualNetworks",
-            "name": "[variables('vnetName')]",
-            "location": "[variables('location')]",
-            "tags": {
-                "participantId": "[parameters('userNumber')]"
-            },
-            "properties": {
-                "addressSpace": {
-                    "addressPrefixes": [
-                        "10.0.0.0/16"
-                    ]
-                },
-                "subnets": [
-                    {
-                        "name": "[variables('subnetName')]",
-                        "properties": {
-                            "addressPrefix": "10.0.0.0/24"
-                        }
-                    }
-                ]
             }
         },
         {
@@ -268,141 +251,12 @@
             ]
         },
         {
-            "type": "Microsoft.Compute/virtualMachines",
-            "name": "[variables('virtualMachineName')]",
-            "apiVersion": "2018-06-01",
-            "location": "[variables('location')]",
-            "tags": {
-                "participantId": "[parameters('userNumber')]"
-            },
-            "properties": {
-                "osProfile": {
-                    "computerName": "[variables('virtualMachineName')]",
-                    "adminUsername": "[variables('administratorLogin')]",
-                    "adminPassword": {
-                        "reference": {
-                            "keyVault": {
-                                "id": "[reference('linkedTemplate-keyvault').outputs.rkkeyvault.value]"
-                            },
-                            "secretName": "[variables('virtualMachinePasswordSecretName')]"
-                        }
-                    },
-                    "windowsConfiguration": {
-                        "enableAutomaticUpdates": true,
-                        "provisionVmAgent": "true"
-                    }
-                },
-                "hardwareProfile": {
-                    "vmSize": "[variables('vmSize')]"
-                },
-                "storageProfile": {
-                    "imageReference": {
-                        "id": "/subscriptions/b221e5a7-d112-44a3-9a93-4acc1457ad0a/resourceGroups/wyarm/providers/Microsoft.Compute/galleries/wysharedimages/images/AzureMDWLab"
-                    },
-                    "osDisk": {
-                        "createOption": "FromImage",
-                        "managedDisk": {
-                            "storageAccountType": "Premium_LRS"
-                        }
-                    }
-                },
-                "networkProfile": {
-                    "networkInterfaces": [
-                        {
-                            "id": "[resourceId('Microsoft.Network/networkInterfaces', variables('networkInterfaceName'))]"
-                        }
-                    ]
-                }
-            },
-            "dependsOn": [
-                "[concat('Microsoft.Network/networkInterfaces/', variables('networkInterfaceName'))]",
-                 "linkedTemplate-keyvault"
-            ]
-        },
-        {
-            "type": "Microsoft.Network/networkInterfaces",
-            "name": "[variables('networkInterfaceName')]",
-            "tags": {
-                "participantId": "[parameters('userNumber')]"
-            },
-            "apiVersion": "2018-10-01",
-            "location": "[variables('location')]",
-            "properties": {
-                "ipConfigurations": [
-                    {
-                        "name": "ipconfig1",
-                        "properties": {
-                            "subnet": {
-                                "id": "[variables('subnetRef')]"
-                            },
-                            "privateIPAllocationMethod": "Dynamic",
-                            "publicIpAddress": {
-                                "id": "[resourceId(resourceGroup().name,'Microsoft.Network/publicIpAddresses', variables('publicIpAddressName'))]"
-                            }
-                        }
-                    }
-                ],
-                "networkSecurityGroup": {
-                    "id": "[resourceId(resourceGroup().name, 'Microsoft.Network/networkSecurityGroups', variables('networkSecurityGroupName'))]"
-                }
-            },
-            "dependsOn": [
-                "[concat('Microsoft.Network/publicIpAddresses/', variables('publicIpAddressName'))]",
-                "[concat('Microsoft.Network/networkSecurityGroups/', variables('networkSecurityGroupName'))]"
-            ]
-        },
-        {
-            "type": "Microsoft.Network/publicIpAddresses",
-            "sku": {
-                "name": "Basic"
-            },
-            "name": "[variables('publicIpAddressName')]",
-            "apiVersion": "2018-08-01",
-            "location": "[variables('location')]",
-            "tags": {
-                "participantId": "[parameters('userNumber')]"
-            },
-            "properties": {
-                "publicIpAllocationMethod": "Dynamic"
-            }
-        },
-        {
-            "type": "Microsoft.Network/networkSecurityGroups",
-            "name": "[variables('networkSecurityGroupName')]",
-            "apiVersion": "2018-08-01",
-            "location": "[variables('location')]",
-            "tags": {
-                "participantId": "[parameters('userNumber')]"
-            },
-            "properties": {
-                "securityRules": [
-                    {
-                        "name": "RDP",
-                        "properties": {
-                            "priority": 300,
-                            "protocol": "Tcp",
-                            "access": "Allow",
-                            "direction": "Inbound",
-                            "sourceApplicationSecurityGroups": [
-                            ],
-                            "destinationApplicationSecurityGroups": [
-                            ],
-                            "sourceAddressPrefix": "*",
-                            "sourcePortRange": "*",
-                            "destinationAddressPrefix": "*",
-                            "destinationPortRange": "3389"
-                        }
-                    }
-                ]
-            }
-        },
-        {
             "apiVersion": "2018-06-01",
             "type": "Microsoft.Compute/virtualMachines/extensions",
             "name": "[concat(variables('virtualMachineName'),'/','USGS-LabInit')]",
             "location": "[variables('location')]",
             "dependsOn": [
-                "[concat('Microsoft.Compute/virtualMachines/', variables('virtualMachineName'))]"
+                "linkedTemplate-jumpvm"
             ],
             "properties": {
                 "publisher": "Microsoft.Compute",
@@ -427,14 +281,11 @@
         },
         "vmPassword": {
             "type": "string",
-            "value": {
-                "reference": {
-                    "keyVault": {
-                        "id": "[reference('linkedTemplate-keyvault').outputs.rkkeyvault.value]"
-                    },
-                    "secretName": "[variables('virtualMachinePasswordSecretName')]"
-                }
-            }
+            "value": "[variables('virtualMachinePassword')]"
+        },
+        "synapsePassword": {
+            "type": "string",
+            "value": "[variables('administratorLoginPassword')]"
         },
         "userNumber": {
             "type": "string",
