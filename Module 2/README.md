@@ -78,14 +78,14 @@ Now that access to your data lake is restricted to just trusted Azure services, 
         # Generate and assign an Azure AD Identity for this server
         Set-AzSqlServer -ResourceGroupName $resourceGroupName -ServerName $serverName -AssignIdentity 
 
-        ```
+    ```
 2. Grant your Azure SQL Server access to the data lake instance. The SQL Server will be assigned to the role of Storage Blob Data Contributor.
 
     **Note** : Only members with the Owner RBAC privilege on the data lake can perform this step.
 
     ```powershell
     # List details of the Storage Blob Data Contributor Role
-    $StorageContributorRole = "Storage Blob Data Contributor (Preview)"
+    $StorageContributorRole = "Storage Blob Data Contributor"
     Get-AzRoleDefinition -Name $StorageContributorRole
 
     # Get ServicePrincipalId assigned to SQL Server
