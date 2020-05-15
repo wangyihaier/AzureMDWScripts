@@ -10,7 +10,7 @@
         },
         "branch": {
             "type": "string",
-            "defaultValue": "kvdev"
+            "defaultValue": "master"
         },
         "deploymentLocations": {
             "type": "string",
