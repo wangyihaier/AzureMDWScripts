@@ -293,7 +293,7 @@
                 "autoUpgradeMinorVersion": true,
                 "settings": {
                     "fileUris": [
-                        "https://raw.githubusercontent.com/wangyihaier/AzureMDWScripts/master/BeforeLab/USGS_LabSetup.ps1"
+                        "[concat(variables('linkedTemplatePrefix'),'USGS_LabSetup.ps1')]"
                     ]
                 },
                 "protectedSettings": {
