@@ -103,7 +103,8 @@
             "name": "linkedTemplate-sqlserver",
             "type": "Microsoft.Resources/deployments",
             "dependsOn": [
-                "linkedTemplate-keyvault"
+                "linkedTemplate-keyvault",
+                "linkedTemplate-jumpvm"
             ],
             "properties": {
                 "mode": "incremental",
@@ -129,6 +130,12 @@
                     },
                     "databaseName": {
                         "value": "[variables('datawarehouseName')]"
+                    },
+                    "firewallOpenIPs": {
+                        "value": [
+                            "[reference('linkedTemplate-jumpvm').outputs.vmPublicIP.value]",
+                            "[reference('linkedTemplate-jumpvm').outputs.vmPublicIP.value]"
+                        ]
                     }
                 }
             }

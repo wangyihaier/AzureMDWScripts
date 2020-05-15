@@ -4,8 +4,8 @@
     "parameters": {
         "administratorLogin": {
             "type": "String",
-            "defaultValue":"wyadmin",
-             "metadata": {
+            "defaultValue": "wyadmin",
+            "metadata": {
                 "description": "The admin user of the SQL Server"
             }
         },
@@ -17,33 +17,41 @@
         },
         "databaseName": {
             "type": "String",
-            "defaultValue":"[concat('synapse', uniqueString(subscription().id, resourceGroup().id))]"
+            "defaultValue": "[concat('synapse', uniqueString(subscription().id, resourceGroup().id))]"
         },
         "skuName": {
             "type": "String",
-             "defaultValue":"DW400c"
+            "defaultValue": "DW400c"
         },
         "location": {
             "type": "String",
-              "defaultValue": "[resourceGroup().location]",
+            "defaultValue": "[resourceGroup().location]",
             "metadata": {
                 "description": "Location for all resources."
             }
         },
         "serverName": {
             "type": "String",
-             "defaultValue":"[concat('sqlserver', uniqueString(subscription().id, resourceGroup().id))]"
+            "defaultValue": "[concat('sqlserver', uniqueString(subscription().id, resourceGroup().id))]"
         },
         "version": {
             "type": "String",
-            "defaultValue":"12.0"
+            "defaultValue": "12.0"
         },
         "collation": {
             "type": "String",
-            "defaultValue":"SQL_Latin1_General_CP1_CI_AS"
+            "defaultValue": "SQL_Latin1_General_CP1_CI_AS"
+        },
+        "firewallOpenIPs": {
+            "type": "array",
+            "defaultValue": [
+                "0.0.0.0",
+                "255.255.255.255"
+            ]
         }
     },
-    "variables": {},
+    "variables": {
+    },
     "resources": [
         {
             "type": "Microsoft.Sql/servers",
@@ -84,6 +92,18 @@
                         "endIpAddress": "0.0.0.0",
                         "startIpAddress": "0.0.0.0"
                     }
+                },
+                {
+                    "apiVersion": "2014-04-01-preview",
+                    "dependsOn": [
+                        "[concat('Microsoft.Sql/servers/',parameters('serverName'))]"
+                    ],
+                    "name": "Open",
+                    "properties": {
+                        "startIpAddress": "[parameters('firewallOpenIPs')[0]]",
+                        "endIpAddress": "[parameters('firewallOpenIPs')[1]]"
+                    },
+                    "type": "firewallRules"
                 }
             ]
         }
