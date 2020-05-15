@@ -269,11 +269,6 @@
         "adminUsername": {
             "type": "string",
             "value": "[parameters('adminUsername')]"
-        },
-        "vmPublicIP":
-        {
-            "type":"string",
-            "value": "[reference(resourceId('Microsoft.Network/publicIPAddresses',parameters('publicIpAddressName'))).IpAddress]"
         }
     }
 }
