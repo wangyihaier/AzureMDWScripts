@@ -104,7 +104,8 @@
             "type": "Microsoft.Resources/deployments",
             "dependsOn": [
                 "linkedTemplate-keyvault",
-                "linkedTemplate-jumpvm"
+                "linkedTemplate-jumpvm",
+                "linkedTemplate-fetchIpAddress"
             ],
             "properties": {
                 "mode": "incremental",
@@ -133,8 +134,8 @@
                     },
                     "firewallOpenIPs": {
                         "value": [
-                            "[reference('linkedTemplate-jumpvm').outputs.vmPublicIP.value]",
-                            "[reference('linkedTemplate-jumpvm').outputs.vmPublicIP.value]"
+                            "[reference('linkedTemplate-fetchIpAddress').outputs.ipAddress.value]",
+                            "[reference('linkedTemplate-fetchIpAddress').outputs.ipAddress.value]"
                         ]
                     }
                 }
@@ -182,6 +183,26 @@
                     },
                     "publicIpAddressName": {
                         "value": "[variables('publicIpAddressName')]"
+                    }
+                }
+            }
+        },
+        {
+            "apiVersion": "2017-05-10",
+            "name": "linkedTemplate-fetchIpAddress",
+            "type": "Microsoft.Resources/deployments",
+            "dependsOn": [
+                "linkedTemplate-jumpvm"
+            ],
+            "properties": {
+                "mode": "Incremental",
+                "templateLink": {
+                    "contentVersion": "1.0.0.0",
+                    "uri": "[concat(variables('linkedTemplatePrefix'),'fetchIPAddress.json')]"
+                },
+                "parameters": {
+                    "publicIPAddressId": {
+                        "value": "[resourceId('Microsoft.Network/publicIpAddresses', variables('publicIPAddressName'))]"
                     }
                 }
             }
