@@ -61,7 +61,7 @@
         "adbPricingTier": "premium",
         "managedResourceGroupName": "[concat('databricks-rg-', variables('adbWorkspaceName'), '-', uniqueString(variables('adbWorkspaceName'), resourceGroup().id))]",
         "keyVaultName": "[concat('usgskv', parameters('userNumber'))]",
-        "linkedTemplatePrefix": "[concat('https://raw.githubusercontent.com/wangyihaier/AzureMDWScripts/', parameters('branch'),'/BeforeLab/')]"
+        "linkedTemplatePrefix": "[concat('https://raw.githubusercontent.com/wangyihaier/AzureMDWScripts/', parameters('branch'),'/LabProvison/')]"
     },
     "resources": [
         {
