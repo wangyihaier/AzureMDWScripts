@@ -10,7 +10,7 @@
         },
         "branch": {
             "type": "string",
-            "defaultValue": "master"
+            "defaultValue": "kvdev"
         }
     },
     "variables": {
@@ -51,7 +51,7 @@
         "managedResourceGroupNameSecretName": "managedResourceGroupNameSecretName",
         "managedResourceGroupName": "[concat('databricks-rg-', variables('adbWorkspaceName'), '-', uniqueString(variables('adbWorkspaceName'), resourceGroup().id))]",
         "keyVaultName": "[concat('usgskv', parameters('userNumber'))]",
-        "linkedTemplatePrefix": "[concat('https://raw.githubusercontent.com/wangyihaier/AzureMDWScripts/', parameters('branch'),'/LabProvison/')]"
+        "linkedTemplatePrefix": "[concat('https://raw.githubusercontent.com/wangyihaier/AzureMDWScripts/', parameters('branch'),'/LabProvision/')]"
     },
     "resources": [
         {
