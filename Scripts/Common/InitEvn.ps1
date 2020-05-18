@@ -131,6 +131,7 @@ $keyVaultName = 'usgskv' + $participantNumber
 
 Login -SubId $subscriptionId
 
+# Assign the current login with right permission on the secrets
 AssignSecretPermissions -keyVaultName $keyVaultName -resourceGroupName $resourceGroupName -keyVaultUser (Get-AzContext).Account.Id
 
 $serverName = RetriveSecrets -keyVaultName $keyVaultName -secretName 'usgsserverSecretName'
