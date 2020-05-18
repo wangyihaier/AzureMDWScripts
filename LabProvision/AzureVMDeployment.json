@@ -113,6 +113,10 @@
             "metadata": {
                 "description": "Location for all resources."
             }
+        },
+        "imageReferenceFile": {
+            "type": "String",
+            "defaultValue": "/subscriptions/b221e5a7-d112-44a3-9a93-4acc1457ad0a/resourceGroups/wyarm/providers/Microsoft.Compute/galleries/wysharedimages/images/AzureMDWLab"
         }
     },
     "variables": {
@@ -205,7 +209,7 @@
                         }
                     },
                     "imageReference": {
-                        "id": "/subscriptions/b221e5a7-d112-44a3-9a93-4acc1457ad0a/resourceGroups/wyarm/providers/Microsoft.Compute/galleries/wysharedimages/images/AzureMDWLab"
+                        "id": "[parameters('imageReferenceFile')]"
                     },
                     "copy": [
                         {

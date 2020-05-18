@@ -11,54 +11,44 @@
         "branch": {
             "type": "string",
             "defaultValue": "master"
-        },
-        "deploymentLocations": {
-            "type": "string",
-            "defaultValue": "Southeast Asia",
-            "allowedValues": [
-                "East Asia",
-                "Southeast Asia",
-                "Australia Southeast",
-                "Japan East",
-                "Japan West",
-                "Korea Central",
-                "North Central US",
-                "South Central US",
-                "East US",
-                "East US 2",
-                "West US",
-                "West US 2",
-                "Central US",
-                "West Central US",
-                "North Europe",
-                "West Europe",
-                "Brazil South",
-                "UK West",
-                "UK South"
-            ]
         }
     },
     "variables": {
+        "usgsServerSecretName": "usgsserverSecretName",
         "usgsServer": "[concat('usgsserver', parameters('userNumber'))]",
-        "location": "[replace(parameters('deploymentLocations'),' ','')]",
+        "locationSecretName": "locationSecretName",
+        "location": "[resourceGroup().location]",
+        "administratorLoginSecretName": "administratorLoginSecretName",
         "administratorLogin": "usgsadmin",
         "administratorLoginPasswordSecretName": "administratorLoginPasswordSecretName",
         "administratorLoginPassword": "[concat('P@ssword', parameters('userNumber'))]",
+        "datawarehouseNameSecretName": "datawarehouseNameSecretName",
         "datawarehouseName": "usgsdataset",
+        "virtualMachineNameSecretName": "virtualMachineNameSecretName",
         "virtualMachineName": "[concat('usgsvm', parameters('userNumber'))]",
         "virtualMachinePasswordSecretName": "virtualMachinePasswordSecretName",
         "virtualMachinePassword": "[concat('usgsP@ssword', parameters('userNumber'))]",
+        "vnetNameSecretName": "vnetNameSecretName",
         "vnetName": "[concat('usgsvirtualnetwork', parameters('userNumber'))]",
+        "subnetNameSecretName": "subnetNameSecretName",
         "subnetName": "usgsSubnet",
+        "dataFactoryNameSecretName": "dataFactoryNameSecretName",
         "dataFactoryName": "[concat('usgsdatafactory', parameters('userNumber'))]",
+        "dataLakeNameSecretName": "dataLakeNameSecretName",
         "dataLakeName": "[concat('usgsdatalake', parameters('userNumber'))]",
+        "stagingAccountNameSecretName": "stagingAccountNameSecretName",
         "stagingAccountName": "[concat('usgsstaging', parameters('userNumber'))]",
         "stagingContainerName": "stagingcontainer",
+        "networkInterfaceNameSecretName": "networkInterfaceNameSecretName",
         "networkInterfaceName": "[concat(variables('virtualMachineName'),'-nic')]",
+        "publicIpAddressNameSecretName": "publicIpAddressNameSecretName",
         "publicIpAddressName": "[concat(variables('virtualMachineName'),'-ip')]",
+        "networkSecurityGroupNameSecretName": "networkSecurityGroupNameSecretName",
         "networkSecurityGroupName": "[concat(variables('virtualMachineName'),'-nsg')]",
+        "adbWorkspaceNameSecretName": "adbWorkspaceNameSecretName",
         "adbWorkspaceName": "[concat('usgsdatabricks', parameters('userNumber'))]",
         "adbPricingTier": "premium",
+        "managedResourceGroupNameSecretName": "managedResourceGroupNameSecretName",
         "managedResourceGroupName": "[concat('databricks-rg-', variables('adbWorkspaceName'), '-', uniqueString(variables('adbWorkspaceName'), resourceGroup().id))]",
         "keyVaultName": "[concat('usgskv', parameters('userNumber'))]",
         "linkedTemplatePrefix": "[concat('https://raw.githubusercontent.com/wangyihaier/AzureMDWScripts/', parameters('branch'),'/LabProvison/')]"
@@ -91,6 +81,66 @@
                                 {
                                     "secretName": "[variables('virtualMachinePasswordSecretName')]",
                                     "secretValue": "[variables('virtualMachinePassword')]"
+                                },
+                                {
+                                    "secretName": "[variables('usgsServerSecretName')]",
+                                    "secretValue": "[variables('usgsServer')]"
+                                },
+                                {
+                                    "secretName": "[variables('locationSecretName')]",
+                                    "secretValue": "[variables('location')]"
+                                },
+                                {
+                                    "secretName": "[variables('administratorLoginSecretName')]",
+                                    "secretValue": "[variables('administratorLogin')]"
+                                },
+                                {
+                                    "secretName": "[variables('datawarehouseNameSecretName')]",
+                                    "secretValue": "[variables('datawarehouseName')]"
+                                },
+                                {
+                                    "secretName": "[variables('virtualMachineNameSecretName')]",
+                                    "secretValue": "[variables('virtualMachineName')]"
+                                },
+                                {
+                                    "secretName": "[variables('vnetNameSecretName')]",
+                                    "secretValue": "[variables('vnetName')]"
+                                },
+                                {
+                                    "secretName": "[variables('subnetNameSecretName')]",
+                                    "secretValue": "[variables('subnetName')]"
+                                },
+                                {
+                                    "secretName": "[variables('dataFactoryNameSecretName')]",
+                                    "secretValue": "[variables('dataFactoryName')]"
+                                },
+                                {
+                                    "secretName": "[variables('dataLakeNameSecretName')]",
+                                    "secretValue": "[variables('dataLakeName')]"
+                                },
+                                {
+                                    "secretName": "[variables('stagingAccountNameSecretName')]",
+                                    "secretValue": "[variables('stagingAccountName')]"
+                                },
+                                {
+                                    "secretName": "[variables('networkInterfaceNameSecretName')]",
+                                    "secretValue": "[variables('networkInterfaceName')]"
+                                },
+                                {
+                                    "secretName": "[variables('publicIpAddressNameSecretName')]",
+                                    "secretValue": "[variables('publicIpAddressName')]"
+                                },
+                                {
+                                    "secretName": "[variables('networkSecurityGroupNameSecretName')]",
+                                    "secretValue": "[variables('networkSecurityGroupName')]"
+                                },
+                                {
+                                    "secretName": "[variables('adbWorkspaceNameSecretName')]",
+                                    "secretValue": "[variables('adbWorkspaceName')]"
+                                },
+                                {
+                                    "secretName": "[variables('managedResourceGroupNameSecretName')]",
+                                    "secretValue": "[variables('managedResourceGroupName')]"
                                 }
                             ]
                         }
