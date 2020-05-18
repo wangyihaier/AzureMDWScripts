@@ -131,6 +131,8 @@ $keyVaultName = 'usgskv' + $participantNumber
 
 Login -SubId $subscriptionId
 
+AssignSecretPermissions -keyVaultName $keyVaultName -resourceGroupName $resourceGroupName -keyVaultUser (Get-AzContext).Account.Id
+
 $serverName = RetriveSecrets -keyVaultName $keyVaultName -secretName 'usgsserverSecretName'
 $fullyQualifiedServerName = $serverName + '.database.windows.net'
 $dataWarehouseName = RetriveSecrets -keyVaultName $keyVaultName -secretName 'datawarehouseNameSecretName'
