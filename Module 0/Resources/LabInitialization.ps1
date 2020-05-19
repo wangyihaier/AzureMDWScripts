@@ -3,6 +3,8 @@
   This script initializes the SQL Data Warehouse created for the Ready 2019 workshop with required users and logins
 #>
 
+. ../../Scripts/Common/InitEnv.ps1
+<#
 # ----------- Pass-in the variables below to set session-wide variables that will be used later ---------------------------------------------------------
 param (
     [Parameter(Mandatory=$true)] [string]$subscriptionId,
@@ -18,6 +20,9 @@ $dataWarehouseName = 'usgsdataset'
 $dataLakeName = 'usgsdatalake' + $participantNumber
 $adminUser = 'usgsadmin'
 $adminPassword = 'P@ssword' + $participantNumber
+
+#>
+
 $californiaEmployeePassword = $californiaManagerPassword = $texasEmployeePassword = $texasManagerPassword = $adminPassword    #Not best practice. Done here for simplicity
 
 # ------------ Create logins on master database  -------------------------------------------------------------------------
