@@ -1,6 +1,6 @@
 ﻿
 
-
+<# 
 # ----------- Pass-in the variables below to set session-wide variables that will be used later ---------------------------------------------------------
 param (
     [Parameter(Mandatory=$true)] [string]$subscriptionId,
@@ -8,10 +8,10 @@ param (
     [Parameter(Mandatory=$true)] [string]$participantNumber    
 )
 $ErrorActionPreference = "Stop"
-<# 
+
 $subscriptionId = 'b221e5a7-d112-44a3-9a93-4acc1457ad0a' 
 $participantNumber = 123 
-$resourceGroupName = 'wymoderndw' #>
+$resourceGroupName = 'wymoderndw' 
 
 Connect-AzAccount -Subscription $subscriptionId
 
@@ -24,17 +24,6 @@ $dataLakeName = 'usgsdatalake' + $participantNumber
 $adminUser = 'usgsadmin'
 $adminPassword = 'P@ssword' + $participantNumber   
 
-# Create an integration runtime instance
-Set-AzDataFactoryV2IntegrationRuntime -ResourceGroupName $resourceGroupName -DataFactoryName $dataFactoryName -Name 'dataMovementEngine' -Type SelfHosted -Description "Integration runtime to copy on-prem SQL Server data to cloud" 
-
-
-# Retrieve integration runtime instance key
-$AuthKeys = Get-AzDataFactoryV2IntegrationRuntimeKey -ResourceGroupName $resourceGroupName -DataFactoryName $dataFactoryName -Name dataMovementEngine
-
-# Install & Register Integration Runtime Gateway
-.\gatewayInstall.ps1 $AuthKeys.AuthKey1
-
-
 $localUserPassword = "usgsP@ssword" + $participantNumber   
 $localUserId = "usgsadmin"
 
@@ -46,6 +35,18 @@ $dataLakeAccountKey = (Get-AzStorageAccountKey -ResourceGroupName $resourceGroup
 $dataLakeAccountKey_Secure = ConvertTo-SecureString -String $dataLakeAccountKey -AsPlainText -Force
 $dataLakeURL = "https://$dataLakeName.dfs.core.windows.net"  
 
+#>
+
+. ..\..\Scripts\Common\InitEnv.ps1
+
+# Create an integration runtime instance
+Set-AzDataFactoryV2IntegrationRuntime -ResourceGroupName $resourceGroupName -DataFactoryName $dataFactoryName -Name 'dataMovementEngine' -Type SelfHosted -Description "Integration runtime to copy on-prem SQL Server data to cloud" 
+
+# Retrieve integration runtime instance key
+$AuthKeys = Get-AzDataFactoryV2IntegrationRuntimeKey -ResourceGroupName $resourceGroupName -DataFactoryName $dataFactoryName -Name dataMovementEngine
+
+# Install & Register Integration Runtime Gateway
+.\gatewayInstall.ps1 $AuthKeys.AuthKey1
 
 #----------------Grant acess to data lake for Data Factory 
 # Get ServicePrincipalId assigend for Data Factory

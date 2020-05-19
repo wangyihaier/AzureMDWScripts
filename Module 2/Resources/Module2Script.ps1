@@ -1,9 +1,10 @@
-﻿$subscriptionId = 'b221e5a7-d112-44a3-9a93-4acc1457ad0a' 
+﻿
+<#
+$subscriptionId = 'b221e5a7-d112-44a3-9a93-4acc1457ad0a' 
 $participantNumber = 123 
 $resourceGroupName = 'wydw'
 
 Connect-AzAccount -Subscription $subscriptionId
-
 
 # --------------- Setup module variables ---------------------------------- 
 $serverName = 'usgsserver' + $participantNumber 
@@ -16,8 +17,9 @@ $dbPassword = 'P@ssword' + $participantNumber
 $securePasswordString = ConvertTo-SecureString $dbPassword -AsPlainText -Force
 $dbCredentials = New-Object System.Management.Automation.PSCredential($dbUserName, $securePasswordString)
 $dataFactoryName = 'usgsdatafactory' + $participantNumber
+#>
 
-
+. ..\..\Scripts\Common\InitEnv.ps1
 #----------------Restrict global access to Azure Data Lake Storage instance
 # Display the default rule for the data lake
 (Get-AzStorageAccountNetworkRuleSet -ResourceGroupName $resourceGroupName -AccountName $dataLakeAccountName).DefaultAction

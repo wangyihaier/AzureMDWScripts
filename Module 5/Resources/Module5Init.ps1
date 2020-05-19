@@ -7,6 +7,7 @@
 
 #>
 
+<#
 # ----------- Pass-in the variables below to set session-wide variables that will be used later ---------------------------------------------------------
 param (
     [Parameter(Mandatory=$true)] [string]$subscriptionName,
@@ -20,6 +21,9 @@ $dataWarehouseName = 'usgsdataset'
 $dataLakeName = 'usgsdatalake' + $participantNumber
 $adminUser = 'usgsadmin'
 $adminPassword = 'P@ssword' + $participantNumber
+#>
+
+. ..\..\Scripts\Common\InitEnv.ps1
 
 # ----------- Create loading user login in DW if not already existing -------------------------------------------------------------------------------------------------
 Write-Host "Creating loading user login in data warehouse instance if not present..."
