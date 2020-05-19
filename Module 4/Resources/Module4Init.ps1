@@ -23,7 +23,7 @@ $adminUser = 'usgsadmin'
 $adminPassword = 'P@ssword' + $participantNumber
 #>
 
-. ../../Scripts/Common/InitEnv.ps1
+. ..\..\Scripts\Common\InitEnv.ps1
 
 # ----------- Create loading user login in DW if not already existing -------------------------------------------------------------------------------------------------
 Write-Host "Creating loading user login in data warehouse instance if not present..."

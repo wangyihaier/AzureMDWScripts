@@ -19,8 +19,7 @@ $dbCredentials = New-Object System.Management.Automation.PSCredential($dbUserNam
 $dataFactoryName = 'usgsdatafactory' + $participantNumber
 #>
 
-. ../../Scripts/Common/InitEnv.ps1
-
+. ..\..\Scripts\Common\InitEnv.ps1
 #----------------Restrict global access to Azure Data Lake Storage instance
 # Display the default rule for the data lake
 (Get-AzStorageAccountNetworkRuleSet -ResourceGroupName $resourceGroupName -AccountName $dataLakeAccountName).DefaultAction

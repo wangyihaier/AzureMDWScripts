@@ -37,7 +37,7 @@ $dataLakeURL = "https://$dataLakeName.dfs.core.windows.net"
 
 #>
 
-. ../../Scripts/Common/InitEnv.ps1
+. ..\..\Scripts\Common\InitEnv.ps1
 
 # Create an integration runtime instance
 Set-AzDataFactoryV2IntegrationRuntime -ResourceGroupName $resourceGroupName -DataFactoryName $dataFactoryName -Name 'dataMovementEngine' -Type SelfHosted -Description "Integration runtime to copy on-prem SQL Server data to cloud" 
