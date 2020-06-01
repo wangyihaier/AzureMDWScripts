@@ -13,39 +13,14 @@ In this module, you learn how to restrict access to your data both from external
 - Existing Azure virtual network
 - Completed pre-requisites from Module 0
 
+## Connect to Azure and initialize the variables needed in this session
 
-## Login to your Azure subscription in PowerShell
-
-The rest of this module will use PowerShell to configure settings and values. If you haven’t previously logged into your Azure account, run the following to setup your PowerShell session.
-
+The rest of this module will use PowerShell to configure settings and values. Run the following to setup your PowerShell session.
 ```powershell
 # ------- Edit the variables below to set session-wide variables ---------
-
-$subscriptionId = '<SubscriptionId>'
-$participantNumber = '<participantNumber>'
-$resourceGroupName='<resourceGroupName>'
-
-# Log into your Azure account
-Connect-AzAccount -Subscription $subscriptionId
-
+. ..\..\Scripts\Common\InitEvn.ps1
 ```
 
-Run the following to setup the variables you’ll use to configure Azure PowerShell commands in the lab:
-
-```powershell
-# ------- Edit the variables below to set session-wide variables ---------
-$serverName = 'usgsserver' + $participantNumber 
-$dataLakeAccountName = 'usgsdatalake' + $participantNumber
-$dataWarehouseName = 'usgsdataset'
-$virtualNetworkName = 'usgsvirtualnetwork' + $participantNumber
-$subNetName = 'usgsSubnet' 
-$dbUserName = 'usgsadmin';
-$dbPassword = 'P@ssword' + $participantNumber
-$securePasswordString = ConvertTo-SecureString $dbPassword -AsPlainText -Force
-$dbCredentials = New-Object System.Management.Automation.PSCredential($dbUserName, $securePasswordString)
-
-
-```
 ## Restrict global access to Azure Data Lake Storage instance
 
 By default, your Azure Data Lake Storage instance is setup to accept connections from any client on any network. You can setup network rules to restrict access to specific networks and Azure services. These rules give you fine-grained control over which Azure services and applications can access the raw data stored in the lake. In this step, you will configure the data lake to restrict access to just trusted Azure services.

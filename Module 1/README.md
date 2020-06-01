@@ -10,32 +10,12 @@ In this module, you learn how to copy data from on-prem sources to Azure. You wi
 - Existing Azure Data Factory
 - Completed pre-requisites from Module 0
 
-## Login to your Azure subscription in PowerShell
+## Connect to Azure and initialize the variables needed in this session
 
 The rest of this module will use PowerShell to configure settings and values. Run the following to setup your PowerShell session.
 ```powershell
 # ------- Edit the variables below to set session-wide variables ---------
-
-$subscriptionId = '<SubscriptionId>'
-$participantNumber = '<participantNumber>'
-$resourceGroupName='<resourceGroupName>'
-
-# Log into your Azure account
-Connect-AzAccount -Subscription $subscriptionId
-
-```
-Run the following to setup the variables you’ll use to configure Azure PowerShell commands in the lab:
-
-```powershell
-# ------- Setup module variables -------------------------- 
-$serverName = 'usgsserver' + $participantNumber
-$fullyQualifiedServerName = $serverName + '.database.windows.net'
-$dataWarehouseName = 'usgsdataset'
-$dataFactoryName = 'usgsdatafactory' + $participantNumber
-$dataLakeName = 'usgsdatalake' + $participantNumber
-$adminUser = 'usgsadmin'
-$adminPassword = 'P@ssword' + $participantNumber   
-
+. ..\..\Scripts\Common\InitEvn.ps1
 ```
 
 ## Configure self-hosted integration runtime instance
