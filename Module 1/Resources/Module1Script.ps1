@@ -37,7 +37,7 @@ $dataLakeURL = "https://$dataLakeName.dfs.core.windows.net"
 
 #>
 
-. ..\..\Scripts\Common\InitEnv.ps1
+. ..\..\Scripts\Common\InitEvn.ps1
 
 # Create an integration runtime instance
 Set-AzDataFactoryV2IntegrationRuntime -ResourceGroupName $resourceGroupName -DataFactoryName $dataFactoryName -Name 'dataMovementEngine' -Type SelfHosted -Description "Integration runtime to copy on-prem SQL Server data to cloud" 
@@ -56,15 +56,34 @@ Get-AzRoleDefinition -Name $StorageContributorRole
 
 $dataFactoryAzureAdIdentity = (Get-AzDataFactoryV2 -ResourceGroupName $resourceGroupName -Name $dataFactoryName ).Identity.PrincipalId
 $permissionScope = "/subscriptions/$subscriptionId/resourceGroups/$resourceGroupName/providers/Microsoft.Storage/storageAccounts/$dataLakeName"
-New-AzRoleAssignment -ObjectId $dataFactoryAzureAdIdentity -RoleDefinitionName $StorageContributorRole -Scope $permissionScope
 
+$AssignedRoles= Get-AzRoleAssignment -ObjectId $dataFactoryAzureAdIdentity
+if(-not $AssignedRoles)
+{
+     New-AzRoleAssignment -ObjectId $dataFactoryAzureAdIdentity -RoleDefinitionName $StorageContributorRole -Scope $permissionScope
+}
+else
+{
+    Write-Host "The role of " + $StorageContributorRole + "has assigend for the data factory:" + $dataFactoryName
+}
 
-New-AzResourceGroupDeployment -Name USGSPipelineDeployment -ResourceGroupName $resourceGroupName -TemplateFile "C:\USGSdata\loadingtemplates\usgs_copypipeline_v2.0.json" -dataFactoryName $dataFactoryName -integrationRuntimeName $integrationRuntimeName -cloudDWConnectionString $dwConnectionString_Secure -dataLakeURL $dataLakeURL -dataLakeAccountKey $dataLakeAccountKey_Secure -localFileSystemPassword $localUserPassword_Secure -localUserId $localUserId -localServerName $env:computername
+$pipelineTemplateFile =  (Join-Path $PSScriptRoot "usgs_copypipeline_v2.0.json")
 
+ New-AzResourceGroupDeployment -Name USGSPipelineDeployment -ResourceGroupName $resourceGroupName `
+ -TemplateFile $pipelineTemplateFile `
+ -dataFactoryName $dataFactoryName `
+ -integrationRuntimeName $integrationRuntimeName `
+ -cloudDWConnectionString $dwConnectionString_Secure `
+ -dataLakeURL $dataLakeURL `
+ -localFileSystemPassword $localUserPassword_Secure `
+ -localUserId $localUserId `
+ -localServerName $env:computername
+# New-AzResourceGroupDeployment -Name USGSPipelineDeployment -ResourceGroupName $resourceGroupName -TemplateFile $pipelineTemplateFile  -TemplateParameterObject $templateParametersValues
 
 # Manually trigger pipeline
 $pipelineRunId = Invoke-AzDataFactoryV2Pipeline -ResourceGroupName $resourceGroupName -DataFactoryName $dataFactoryName -PipelineName "USGSInitialCopy" 
 
 
 # Monitor pipeline status
+
 Get-AzDataFactoryV2PipelineRun -ResourceGroupName $resourceGroupName -DataFactoryName $dataFactoryName -PipelineRunId $pipelineRunId 

@@ -2,8 +2,7 @@
 .SYNOPSIS
   This script initializes the SQL Data Warehouse created for the Ready 2019 workshop with required users and logins
 #>
-
-. ..\..\Scripts\Common\InitEnv.ps1
+. ..\..\Scripts\Common\InitEvn.ps1
 <#
 # ----------- Pass-in the variables below to set session-wide variables that will be used later ---------------------------------------------------------
 param (

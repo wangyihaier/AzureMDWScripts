@@ -29,8 +29,15 @@ class ParameterFile {
                     value = $ParametersVals[$i]
                 }
             }
+            # Write-Host "Index:"+$i+": "+$Parameter
             $i++
+          
         }
+    }
+
+    ParameterFile ( [hashtable]$ParametersVals) {
+
+       $this.parameters = $ParametersVals
     }
 }
 
@@ -94,7 +101,7 @@ class ParameterFileGenerator {
             return [ParameterFile]::new($this.MandatoryParameter,$this.ParameterValue) 
         }
         else {
-            return [ParameterFile]::new($this.Parameter,$this.ParameterValue) 
+            return [ParameterFile]::new($this.ParameterValue) 
         }
        
     }
@@ -163,7 +170,7 @@ function New-ParameterFile {
     param (
         [string] $Path = (Join-Path $PSScriptRoot "azuredeploy.json"),
         [string] $ParametersFilePath = (Join-Path $PSScriptRoot "azuredeploy-parameters.json"),
-        [string[]] $ParameterValues = @("val1","val2"),
+        [hashtable] $ParameterValues = @{val1="val1";val2="val2"},
         [switch] $OnlyMandatoryParameter,
         [switch] $SaveToFile
     )
