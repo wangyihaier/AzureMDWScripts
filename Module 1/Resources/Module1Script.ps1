@@ -67,6 +67,12 @@ else
     Write-Host "The role of " + $StorageContributorRole + "has assigend for the data factory:" + $dataFactoryName
 }
 
+while("Online" -ne (Get-AzDataFactoryV2IntegrationRuntime -DataFactoryName  $dataFactoryName -ResourceGroupName $resourceGroupName -Name $integrationRuntimeName -Status).State)
+{
+    Write-Host "Self-host IR:"$integrationRuntimeName +" is still offline. Wait..."
+    Start-Sleep -Seconds 3
+}
+
 $pipelineTemplateFile =  (Join-Path $PSScriptRoot "usgs_copypipeline_v2.0.json")
 
  New-AzResourceGroupDeployment -Name USGSPipelineDeployment -ResourceGroupName $resourceGroupName `
