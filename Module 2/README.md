@@ -67,7 +67,6 @@ Now that access to your data lake is restricted to just trusted Azure services, 
     $serverAzureAdIdentity = (Get-AzADServicePrincipal -SearchString $ServerName).Id
 
     # Grant server access to data lake (requires Owner permissions)
-    $subscriptionId = (Get-AzSubscription -SubscriptionName $subscriptionName).SubscriptionId
     $permissionScope = "/subscriptions/$subscriptionId/resourceGroups/$resourceGroupName/providers/Microsoft.Storage/storageAccounts/$dataLakeAccountName"
     New-AzRoleAssignment -ObjectId $serverAzureAdIdentity -RoleDefinitionName $StorageContributorRole -Scope $permissionScope  
     ```

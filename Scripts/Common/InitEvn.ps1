@@ -16,6 +16,8 @@ function Login($SubId) {
     else {
         Write-Host "SubscriptionId '$SubId' already connected"
     }
+
+    Set-AzureSubscription  -SubscriptionId $SubId
 }
 
 function RegisterKeyVault() 
